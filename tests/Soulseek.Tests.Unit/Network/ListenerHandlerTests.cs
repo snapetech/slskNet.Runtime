@@ -18,6 +18,7 @@
 namespace Soulseek.Tests.Unit.Network
 {
     using System;
+    using System.Buffers.Binary;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Net;
@@ -414,8 +415,29 @@ namespace Soulseek.Tests.Unit.Network
             handler.HandleConnection(mocks.Listener.Object, mocks.Connection.Object);
 
             var expectedKey = new WaitKey(Constants.WaitKey.SolicitedPeerConnection, username, token);
-            mocks.Connection.VerifySet(m => m.Obfuscated = true, Times.Once);
+            mocks.Connection.Verify(m => m.MarkObfuscated(), Times.Once);
             mocks.Waiter.Verify(m => m.Complete(expectedKey, mocks.Connection.Object), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Rejects oversized obfuscated init before allocation"), AutoData]
+        public void Rejects_Oversized_Obfuscated_Init_Before_Allocation(IPEndPoint endpoint)
+        {
+            var (handler, mocks) = GetFixture(endpoint);
+
+            var lengthBytes = new byte[4];
+            BinaryPrimitives.WriteInt32LittleEndian(lengthBytes, RotatedObfuscation.MaxInitMessageLength + 1);
+            var firstBlock = RotatedObfuscation.Encode(lengthBytes, 0x1020_3040);
+
+            mocks.Listener.Setup(m => m.Obfuscated).Returns(true);
+            mocks.Connection.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(firstBlock));
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
+
+            handler.HandleConnection(mocks.Listener.Object, mocks.Connection.Object);
+
+            mocks.Connection.Verify(m => m.ReadAsync(RotatedObfuscation.MaxInitMessageLength + 1, It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("Invalid obfuscated message length", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
 
         [Trait("Category", "PierceFirewall")]

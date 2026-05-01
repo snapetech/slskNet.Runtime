@@ -1632,6 +1632,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Handles_CannotJoinRoom(string roomName)
         {
             var (handler, mocks) = GetFixture();
+            mocks.Waiter.Setup(m => m.HasWait(new WaitKey(MessageCode.Server.JoinRoom, roomName))).Returns(true);
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.CannotJoinRoom)
@@ -1648,6 +1649,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Handles_CannotCreateRoom(string roomName)
         {
             var (handler, mocks) = GetFixture();
+            mocks.Waiter.Setup(m => m.HasWait(new WaitKey(MessageCode.Server.JoinRoom, roomName))).Returns(true);
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.CannotCreateRoom)
@@ -1657,6 +1659,23 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessageRead(null, message);
 
             mocks.Waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Server.JoinRoom, roomName), It.IsAny<RoomException>()), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Ignores CannotCreateRoom without pending wait"), AutoData]
+        public void Ignores_CannotCreateRoom_Without_Pending_Wait(string roomName)
+        {
+            var (handler, mocks) = GetFixture();
+            mocks.Waiter.Setup(m => m.HasWait(new WaitKey(MessageCode.Server.JoinRoom, roomName))).Returns(false);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.CannotCreateRoom)
+                .WriteString(roomName)
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Server.JoinRoom, roomName), It.IsAny<RoomException>()), Times.Never);
         }
 
         [Trait("Category", "Message")]
