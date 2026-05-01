@@ -24,7 +24,6 @@
 namespace Soulseek.Messaging.Messages
 {
     using System.Collections.Generic;
-    using System.Linq;
 
     /// <summary>
     ///     A response containing users similar to an item.
@@ -47,7 +46,7 @@ namespace Soulseek.Messaging.Messages
             }
 
             var item = reader.ReadString();
-            var count = reader.ReadInteger();
+            var count = ProtocolCountReader.ReadCount(reader, "item similar user", minimumBytesPerItem: 4);
             var users = new List<string>();
 
             for (int i = 0; i < count; i++)
@@ -55,7 +54,7 @@ namespace Soulseek.Messaging.Messages
                 users.Add(reader.ReadString());
             }
 
-            return new ItemSimilarUsers(item, users.ToList().AsReadOnly());
+            return new ItemSimilarUsers(item, users.AsReadOnly());
         }
     }
 }

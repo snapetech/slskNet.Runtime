@@ -24,7 +24,6 @@
 namespace Soulseek.Messaging.Messages
 {
     using System.Collections.Generic;
-    using System.Linq;
 
     /// <summary>
     ///     A response containing item recommendations.
@@ -47,7 +46,7 @@ namespace Soulseek.Messaging.Messages
             }
 
             var item = reader.ReadString();
-            var count = reader.ReadInteger();
+            var count = ProtocolCountReader.ReadCount(reader, "item recommendation", minimumBytesPerItem: 8);
             var recommendations = new List<Recommendation>();
 
             for (int i = 0; i < count; i++)
@@ -55,7 +54,7 @@ namespace Soulseek.Messaging.Messages
                 recommendations.Add(new Recommendation(reader.ReadString(), reader.ReadInteger()));
             }
 
-            return new ItemRecommendations(item, recommendations.ToList().AsReadOnly());
+            return new ItemRecommendations(item, recommendations.AsReadOnly());
         }
     }
 }

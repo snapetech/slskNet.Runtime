@@ -24,7 +24,6 @@
 namespace Soulseek.Messaging.Messages
 {
     using System.Collections.Generic;
-    using System.Linq;
 
     /// <summary>
     ///     A response containing a user's interests.
@@ -55,7 +54,7 @@ namespace Soulseek.Messaging.Messages
 
         private static IReadOnlyCollection<string> ReadStrings(MessageReader<MessageCode.Server> reader)
         {
-            var count = reader.ReadInteger();
+            var count = ProtocolCountReader.ReadCount(reader, "interest", minimumBytesPerItem: 4);
             var values = new List<string>();
 
             for (int i = 0; i < count; i++)
@@ -63,7 +62,7 @@ namespace Soulseek.Messaging.Messages
                 values.Add(reader.ReadString());
             }
 
-            return values.ToList().AsReadOnly();
+            return values.AsReadOnly();
         }
     }
 }

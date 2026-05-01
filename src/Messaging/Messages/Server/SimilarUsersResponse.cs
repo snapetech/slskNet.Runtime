@@ -24,7 +24,6 @@
 namespace Soulseek.Messaging.Messages
 {
     using System.Collections.Generic;
-    using System.Linq;
 
     /// <summary>
     ///     A response containing similar users.
@@ -46,7 +45,7 @@ namespace Soulseek.Messaging.Messages
                 throw new MessageException($"Message Code mismatch creating {nameof(SimilarUsersResponse)} (expected: {(int)MessageCode.Server.GetSimilarUsers}, received: {(int)code})");
             }
 
-            var count = reader.ReadInteger();
+            var count = ProtocolCountReader.ReadCount(reader, "similar user", minimumBytesPerItem: 8);
             var users = new List<SimilarUser>();
 
             for (int i = 0; i < count; i++)
@@ -54,7 +53,7 @@ namespace Soulseek.Messaging.Messages
                 users.Add(new SimilarUser(reader.ReadString(), reader.ReadInteger()));
             }
 
-            return users.ToList().AsReadOnly();
+            return users.AsReadOnly();
         }
     }
 }

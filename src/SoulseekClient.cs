@@ -50,6 +50,7 @@ namespace Soulseek
     {
         private const string DefaultAddress = "server.slsknet.org";
         private const int DefaultPort = 2271;
+        private const int MaximumMessageUsersRecipients = 100;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
@@ -2519,7 +2520,9 @@ namespace Soulseek
                 throw new ArgumentException("The usernames must not be null", nameof(usernames));
             }
 
-            var usernameList = usernames.ToList();
+            var usernameList = usernames
+                .Distinct(StringComparer.InvariantCultureIgnoreCase)
+                .ToList();
 
             if (usernameList.Count == 0)
             {
@@ -2529,6 +2532,11 @@ namespace Soulseek
             if (usernameList.Any(string.IsNullOrWhiteSpace))
             {
                 throw new ArgumentException("The usernames must not contain null or empty strings, or strings consisting only of whitespace", nameof(usernames));
+            }
+
+            if (usernameList.Count > MaximumMessageUsersRecipients)
+            {
+                throw new ArgumentException($"No more than {MaximumMessageUsersRecipients} usernames may be supplied", nameof(usernames));
             }
 
             if (string.IsNullOrEmpty(message))
@@ -4093,7 +4101,7 @@ namespace Soulseek
         {
             try
             {
-                var waitKey = new WaitKey(MessageCode.Server.GetUserInterests, username);
+                var waitKey = new WaitKey(MessageCode.Server.GetUserInterests, WaitKeyNormalizer.Normalize(username));
                 var wait = Waiter.Wait<UserInterests>(waitKey, cancellationToken: cancellationToken);
 
                 await ServerConnection.WriteAsync(new UserInterestsRequest(username), cancellationToken).ConfigureAwait(false);
@@ -4127,7 +4135,7 @@ namespace Soulseek
         {
             try
             {
-                var waitKey = new WaitKey(MessageCode.Server.GetItemRecommendations, item);
+                var waitKey = new WaitKey(MessageCode.Server.GetItemRecommendations, WaitKeyNormalizer.Normalize(item));
                 var wait = Waiter.Wait<ItemRecommendations>(waitKey, cancellationToken: cancellationToken);
 
                 await ServerConnection.WriteAsync(new ItemRecommendationsRequest(MessageCode.Server.GetItemRecommendations, item), cancellationToken).ConfigureAwait(false);
@@ -4144,7 +4152,7 @@ namespace Soulseek
         {
             try
             {
-                var waitKey = new WaitKey(MessageCode.Server.GetItemSimilarUsers, item);
+                var waitKey = new WaitKey(MessageCode.Server.GetItemSimilarUsers, WaitKeyNormalizer.Normalize(item));
                 var wait = Waiter.Wait<ItemSimilarUsers>(waitKey, cancellationToken: cancellationToken);
 
                 await ServerConnection.WriteAsync(new ItemRecommendationsRequest(MessageCode.Server.GetItemSimilarUsers, item), cancellationToken).ConfigureAwait(false);
@@ -4582,7 +4590,7 @@ namespace Soulseek
             }
         }
 
-        private static void ValidateInterestItem(string item)
+        private void ValidateInterestItem(string item)
         {
             if (string.IsNullOrWhiteSpace(item))
             {
@@ -4590,7 +4598,7 @@ namespace Soulseek
             }
         }
 
-        private static void ValidateUsername(string username)
+        private void ValidateUsername(string username)
         {
             if (string.IsNullOrWhiteSpace(username))
             {

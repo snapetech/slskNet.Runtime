@@ -1644,6 +1644,60 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles CannotCreateRoom"), AutoData]
+        public void Handles_CannotCreateRoom(string roomName)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.CannotCreateRoom)
+                .WriteString(roomName)
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Server.JoinRoom, roomName), It.IsAny<RoomException>()), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles recommendations"), AutoData]
+        public void Handles_Recommendations(string item, int score)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetRecommendations)
+                .WriteInteger(1)
+                .WriteString(item)
+                .WriteInteger(score)
+                .WriteInteger(0)
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Server.GetRecommendations), It.Is<RecommendationList>(r => r.Recommendations.Single().Item == item)), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles user interests"), AutoData]
+        public void Handles_UserInterests(string username, string liked)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetUserInterests)
+                .WriteString(username)
+                .WriteInteger(1)
+                .WriteString(liked)
+                .WriteInteger(0)
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Server.GetUserInterests, WaitKeyNormalizer.Normalize(username)), It.Is<UserInterests>(r => r.Liked.Single() == liked)), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Raises PrivateRoomMembershipAdded on PrivateRoomAdded"), AutoData]
         public void Raises_PrivateRoomMembershipAdded_On_PrivateRoomAdded(string roomName)
         {

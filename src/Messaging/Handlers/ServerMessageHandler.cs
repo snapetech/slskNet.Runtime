@@ -242,7 +242,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.GetUserInterests:
                         var userInterests = UserInterestsResponse.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code, userInterests.Username), userInterests);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, WaitKeyNormalizer.Normalize(userInterests.Username)), userInterests);
                         break;
 
                     case MessageCode.Server.GetSimilarUsers:
@@ -251,12 +251,12 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.GetItemRecommendations:
                         var itemRecommendations = ItemRecommendationsResponse.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code, itemRecommendations.Item), itemRecommendations);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, WaitKeyNormalizer.Normalize(itemRecommendations.Item)), itemRecommendations);
                         break;
 
                     case MessageCode.Server.GetItemSimilarUsers:
                         var itemSimilarUsers = ItemSimilarUsersResponse.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code, itemSimilarUsers.Item), itemSimilarUsers);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, WaitKeyNormalizer.Normalize(itemSimilarUsers.Item)), itemSimilarUsers);
                         break;
 
                     case MessageCode.Server.PrivateRoomAdded:

@@ -35,6 +35,11 @@ namespace Soulseek.Messaging.Messages
         /// <param name="item">The item.</param>
         public ItemRecommendationsRequest(MessageCode.Server code, string item)
         {
+            if (code != MessageCode.Server.GetItemRecommendations && code != MessageCode.Server.GetItemSimilarUsers)
+            {
+                throw new MessageException($"Message Code mismatch creating {nameof(ItemRecommendationsRequest)} (expected: {(int)MessageCode.Server.GetItemRecommendations} or {(int)MessageCode.Server.GetItemSimilarUsers}, received: {(int)code})");
+            }
+
             Code = code;
             Item = item;
         }
