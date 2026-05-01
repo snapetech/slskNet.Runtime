@@ -4574,6 +4574,30 @@ namespace Soulseek
             }
         }
 
+        private void EnsureConnectedAndLoggedIn(string operation)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to {operation} (currently: {State})");
+            }
+        }
+
+        private static void ValidateInterestItem(string item)
+        {
+            if (string.IsNullOrWhiteSpace(item))
+            {
+                throw new ArgumentException("The item must not be a null or empty string, or one consisting only of whitespace", nameof(item));
+            }
+        }
+
+        private static void ValidateUsername(string username)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+            }
+        }
+
         private SetListenPortCommand CreateSetListenPortCommand()
         {
             if (!Options.PeerObfuscationOptions.Enabled)
