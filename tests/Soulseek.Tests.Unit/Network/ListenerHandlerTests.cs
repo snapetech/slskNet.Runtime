@@ -391,6 +391,34 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "PierceFirewall")]
+        [Theory(DisplayName = "Completes solicited obfuscated peer connection on peer PierceFirewall"), AutoData]
+        public void Completes_Solicited_Obfuscated_Peer_Connection_On_Peer_PierceFirewall(IPEndPoint endpoint, string username, int token)
+        {
+            var (handler, mocks) = GetFixture(endpoint);
+
+            var message = new PierceFirewall(token).ToByteArray();
+            var obfuscatedMessage = RotatedObfuscation.Encode(message, 0x1020_3040);
+
+            mocks.Connection.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(obfuscatedMessage.AsSpan().Slice(0, 8).ToArray()));
+            mocks.Connection.Setup(m => m.ReadAsync(message.Length - 4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(obfuscatedMessage.AsSpan().Slice(8).ToArray()));
+
+            var dict = new ConcurrentDictionary<int, string>();
+            dict.TryAdd(token, username);
+
+            mocks.Listener.Setup(m => m.Obfuscated).Returns(true);
+            mocks.PeerConnectionManager.Setup(m => m.PendingSolicitations)
+                .Returns(dict);
+
+            handler.HandleConnection(mocks.Listener.Object, mocks.Connection.Object);
+
+            var expectedKey = new WaitKey(Constants.WaitKey.SolicitedPeerConnection, username, token);
+            mocks.Connection.VerifySet(m => m.Obfuscated = true, Times.Once);
+            mocks.Waiter.Verify(m => m.Complete(expectedKey, mocks.Connection.Object), Times.Once);
+        }
+
+        [Trait("Category", "PierceFirewall")]
         [Theory(DisplayName = "Completes solicited distributed connection on distributed PierceFirewall"), AutoData]
         public void Completes_Solicited_Distributed_Connection_On_Distributed_PierceFirewall(IPEndPoint endpoint, string username, int token)
         {
@@ -438,6 +466,32 @@ namespace Soulseek.Tests.Unit.Network
             handler.HandleConnection(null, mocks.Connection.Object);
 
             mocks.PeerConnectionManager.Verify(m => m.AddOrUpdateMessageConnectionAsync(username, mocks.Connection.Object), Times.Once);
+        }
+
+        [Trait("Category", "PierceFirewall")]
+        [Theory(DisplayName = "Adds obfuscated connection on obfuscated SearchResponse PierceFirewall"), AutoData]
+        public void Adds_Obfuscated_Connection_On_Obfuscated_SearchResponse_PierceFirewall(IPEndPoint endpoint, string username, int token, string query)
+        {
+            (string Username, int Token, string Query, SearchResponse SearchResponse) response = (username, token, query, null);
+
+            var cache = new Mock<ISearchResponseCache>();
+            cache.Setup(m => m.TryGet(token, out response)).Returns(true);
+
+            var (handler, mocks) = GetFixture(endpoint, new SoulseekClientOptions(searchResponseCache: cache.Object));
+
+            var message = new PierceFirewall(token).ToByteArray();
+            var obfuscatedMessage = RotatedObfuscation.Encode(message, 0x1020_3040);
+
+            mocks.Connection.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(obfuscatedMessage.AsSpan().Slice(0, 8).ToArray()));
+            mocks.Connection.Setup(m => m.ReadAsync(message.Length - 4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(obfuscatedMessage.AsSpan().Slice(8).ToArray()));
+            mocks.Listener.Setup(m => m.Obfuscated).Returns(true);
+
+            handler.HandleConnection(mocks.Listener.Object, mocks.Connection.Object);
+
+            mocks.PeerConnectionManager.Verify(m => m.AddOrUpdateObfuscatedMessageConnectionAsync(username, mocks.Connection.Object), Times.Once);
+            mocks.PeerConnectionManager.Verify(m => m.AddOrUpdateMessageConnectionAsync(username, mocks.Connection.Object), Times.Never);
         }
 
         [Trait("Category", "PierceFirewall")]
