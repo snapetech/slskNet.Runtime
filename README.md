@@ -17,6 +17,20 @@ This is a modified version of Soulseek.NET. It is not maintained by, endorsed by
 
 Type-1 obfuscation is not encryption. It is a compatibility/privacy posture for peer-message streams only; file-transfer and distributed-network streams remain regular transport.
 
+## Feature Summary
+
+| Area | Public API / Type | Wire behavior | Default impact |
+| ---- | ----------------- | ------------- | -------------- |
+| Type-1 peer-message obfuscation | `PeerObfuscationOptions`, `SoulseekClientOptions.PeerObfuscationOptions` | Advertises type-1 metadata, opens a dedicated obfuscated peer-message listener, and can prefer compatible obfuscated peer-message dials | Off by default in this runtime; regular peer-message fallback is mandatory when enabled |
+| User interests | `AddInterestAsync`, `RemoveInterestAsync`, `AddHatedInterestAsync`, `RemoveHatedInterestAsync` | Sends the native Soulseek interest management server commands | No command is sent unless the application calls the API |
+| Recommendations | `GetRecommendationsAsync`, `GetGlobalRecommendationsAsync`, `RecommendationList`, `Recommendation` | Requests personal/global recommendation lists from the Soulseek server | Read-only request; no effect on search/browse/transfer behavior |
+| User interest lookup | `GetUserInterestsAsync`, `UserInterests` | Requests another user's liked and hated interest strings | Read-only request; caller controls when it runs |
+| Similar users | `GetSimilarUsersAsync`, `SimilarUser` | Requests users with interests similar to the current logged-in user | Read-only request; caller controls when it runs |
+| Item discovery | `GetItemRecommendationsAsync`, `ItemRecommendations`, `GetItemSimilarUsersAsync`, `ItemSimilarUsers` | Requests recommendation branches or similar users for a specific item string | Read-only request; item strings are not verified metadata identities |
+| Multi-user private message | `SendPrivateMessageAsync(IEnumerable<string>, string, CancellationToken?)` | Sends the native `MessageUsers` command once for multiple recipients | Only the overload emits this command; single-recipient messaging is unchanged |
+| Room failure surfacing | `CannotCreateRoom` handling | Completes the pending room join waiter with `RoomException` | Passive response handling; join request format is unchanged |
+| Parser hardening | `ProtocolCountReader` and updated response parsers | Rejects negative or impossible collection counts before allocation/read loops | Malformed responses fail closed instead of producing partial results |
+
 ## Compatibility
 
 The forked runtime remains wire-compatible with legacy Soulseek clients when default options are used. New protocol behavior is opt-in or passive:
@@ -48,6 +62,13 @@ var options = new SoulseekClientOptions(
 
 This advertises the regular peer-message port and the type-1 obfuscated peer-message port. Incoming obfuscated peer-message handshakes are decoded by the dedicated obfuscated listener. Outbound peer-message connection setup can prefer a compatible cached obfuscated endpoint, while preserving regular direct and indirect fallback behavior.
 
+Operational notes:
+
+- Use a different port for the regular and obfuscated peer-message listeners.
+- Keep `advertiseRegularPort` enabled. The constructor rejects obfuscated-only advertising because it would break legacy-client reachability.
+- `preferOutbound` changes connection ordering only for peers that advertised compatible type-1 metadata.
+- Obfuscation applies to peer-message streams. Transfers still use the existing file-transfer connection behavior.
+
 ### Interests and recommendations
 
 The runtime exposes the server-side interest and recommendation messages used by Soulseek clients:
@@ -66,6 +87,13 @@ var itemRecommendations = await client.GetItemRecommendationsAsync("ambient");
 var itemSimilarUsers = await client.GetItemSimilarUsersAsync("ambient");
 ```
 
+Returned values are deliberately close to the Soulseek protocol:
+
+- `RecommendationList.Recommendations` and `RecommendationList.Unrecommendations` contain raw item strings plus integer scores.
+- `UserInterests.Liked` and `UserInterests.Hated` contain raw interest strings reported by the server.
+- `SimilarUser.Rating` is the server-provided similarity rating.
+- `ItemRecommendations.Item` and `ItemSimilarUsers.Item` echo the requested item string after server response parsing.
+
 Parser implementations reject negative or impossible collection counts before building result lists, so malformed server responses fail closed instead of silently producing partial data.
 
 ### Multi-user private messages
@@ -77,6 +105,8 @@ await client.SendPrivateMessageAsync(new[] { "alice", "bob" }, "hello");
 ```
 
 Recipients are deduplicated case-insensitively and capped at 100 recipients per call to avoid accidentally creating oversized packets or duplicate sends.
+
+The overload validates all recipients before writing the packet. Null, empty, and whitespace-only usernames are rejected; duplicate usernames differing only by case are sent once. Applications that need local conversation history should persist one outbound message per normalized recipient after the call succeeds.
 
 ### Room creation failures
 

@@ -47,6 +47,13 @@ Legacy impact:
 - If a legacy peer ignores obfuscation metadata, no compatibility issue is introduced.
 - If an obfuscated outbound attempt fails, regular direct or indirect connection setup can still succeed.
 
+Security and safety notes:
+
+- Obfuscation hides the peer-message frame shape from casual inspection, but it does not authenticate peers, encrypt payloads, hide IP addresses, or protect file-transfer traffic.
+- Obfuscated listener input is decoded only after validating the advertised obfuscated frame length.
+- Outbound obfuscated connection preference never disables indirect connection fallback.
+- The runtime requires regular-port advertisement when obfuscation is enabled; callers cannot use this implementation to create an obfuscated-only Soulseek client.
+
 ## Interest and Recommendation APIs
 
 The fork exposes server protocol messages that were defined in Soulseek protocol references but not previously surfaced as client APIs.
@@ -64,12 +71,29 @@ Client APIs:
 - `GetItemRecommendationsAsync(string item)`
 - `GetItemSimilarUsersAsync(string item)`
 
+Returned models:
+
+| Model | Contents |
+| ----- | -------- |
+| `Recommendation` | Raw item string plus server-provided integer score |
+| `RecommendationList` | Recommended and unrecommended item collections |
+| `UserInterests` | Username plus liked and hated raw interest strings |
+| `SimilarUser` | Username plus server-provided similarity rating |
+| `ItemRecommendations` | Requested item plus recommendation collection |
+| `ItemSimilarUsers` | Requested item plus similar username collection |
+
 Implementation pieces:
 
 - Outgoing request messages encode the corresponding server message codes.
 - Incoming response parsers materialize typed results: `RecommendationList`, `UserInterests`, `SimilarUser`, `ItemRecommendations`, and `ItemSimilarUsers`.
 - Waiter keys for user and item responses are case-normalized so a server response with different casing can still complete the request.
 - Repeated response counts are validated by `ProtocolCountReader` before allocation and parsing.
+
+Application guidance:
+
+- Treat item values as Soulseek discovery/search seeds, not verified artist, release, or recording identifiers.
+- Rate-limit UI or automation calls at the application layer. The runtime exposes protocol commands but does not decide user-facing request budgets.
+- Cache or lazy-load user-interest lookups when rendering large user lists; each lookup is a server request.
 
 Legacy impact:
 
@@ -90,6 +114,7 @@ Implementation details:
 - Recipients are deduplicated case-insensitively.
 - A call is capped at 100 unique recipients to avoid oversized packets and accidental mass sends.
 - The single-user `SendPrivateMessageAsync(string, string, CancellationToken?)` path is unchanged.
+- The runtime sends one `MessageUsers` command. It does not create application-level message history rows; callers that keep local history should write one outbound row per recipient after success.
 
 Legacy impact:
 
