@@ -90,5 +90,29 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(endpoint.Address, response.IPAddress);
             Assert.Equal(endpoint.Port, response.Port);
         }
+
+        [Trait("Category", "Parse")]
+        [Theory(DisplayName = "Parse returns obfuscated metadata"), AutoData]
+        public void Parse_Returns_Obfuscated_Metadata(string username, IPEndPoint endpoint)
+        {
+            var ipBytes = endpoint.Address.GetAddressBytes();
+            Array.Reverse(ipBytes);
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetPeerAddress)
+                .WriteString(username)
+                .WriteBytes(ipBytes)
+                .WriteInteger(endpoint.Port)
+                .WriteInteger(1)
+                .WriteBytes(BitConverter.GetBytes((ushort)(endpoint.Port + 1)))
+                .Build();
+
+            var response = UserAddressResponse.FromByteArray(msg);
+
+            Assert.Equal(1, response.ObfuscationType);
+            Assert.Equal(endpoint.Port + 1, response.ObfuscatedPort);
+            Assert.True(response.HasObfuscatedEndpoint);
+            Assert.Equal(endpoint.Port + 1, response.ObfuscatedIPEndPoint.Port);
+        }
     }
 }

@@ -425,6 +425,24 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(port, reader.ReadInteger());
         }
 
+        [Trait("Request", "SetListenPort")]
+        [Fact(DisplayName = "SetListenPort constructs obfuscated metadata")]
+        public void SetListenPort_Constructs_Obfuscated_Metadata()
+        {
+            var port = new Random().Next(1024, 50000);
+            var obfuscatedPort = port + 1;
+            var a = new SetListenPortCommand(port, 1, obfuscatedPort);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.SetListenPort, code);
+            Assert.Equal(port, reader.ReadInteger());
+            Assert.Equal(1, reader.ReadInteger());
+            Assert.Equal(obfuscatedPort, reader.ReadInteger());
+        }
+
         [Trait("Category", "Instantiation")]
         [Trait("Request", "ConnectToPeerRequest")]
         [Theory(DisplayName = "ConnectToPeerRequest instantiates properly"), AutoData]

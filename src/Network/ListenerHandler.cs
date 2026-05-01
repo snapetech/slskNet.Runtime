@@ -19,6 +19,9 @@
 //
 //     SPDX-FileCopyrightText: JP Dillingham
 //     SPDX-License-Identifier: GPL-3.0-only
+//
+//     Modified by slskdN Team.
+//     Modified: Added type-1 obfuscated peer-message init handling.
 // </copyright>
 
 namespace Soulseek.Network
@@ -63,27 +66,62 @@ namespace Soulseek.Network
         /// <param name="connection">The accepted connection.</param>
         public async void HandleConnection(object sender, IConnection connection)
         {
-            Diagnostic.Debug($"Accepted incoming connection from {connection.IPEndPoint.Address} on {SoulseekClient.Listener.IPAddress}:{SoulseekClient.Listener.Port} (id: {connection.Id})");
+            var listener = sender as IListener;
+            var listenerPort = listener?.Port ?? SoulseekClient.Listener?.Port ?? 0;
+            var listenerAddress = listener?.IPAddress ?? SoulseekClient.Listener?.IPAddress;
+            var obfuscated = listener?.Obfuscated == true;
+
+            Diagnostic.Debug($"Accepted incoming connection from {connection.IPEndPoint.Address} on {listenerAddress}:{listenerPort} (id: {connection.Id})");
 
             try
             {
-                var lengthBytes = await connection.ReadAsync(4).ConfigureAwait(false);
-                var length = BitConverter.ToInt32(lengthBytes, 0);
+                byte[] message;
 
-                var bodyBytes = await connection.ReadAsync(length).ConfigureAwait(false);
-                byte[] message = lengthBytes.Concat(bodyBytes).ToArray();
+                if (obfuscated)
+                {
+                    var firstBlock = await connection.ReadAsync(8).ConfigureAwait(false);
+                    var decodedFirstBlock = RotatedObfuscation.Decode(firstBlock);
+                    var length = BitConverter.ToInt32(decodedFirstBlock, 0);
+                    var obfuscatedMessage = new byte[8 + length];
+                    Buffer.BlockCopy(firstBlock, 0, obfuscatedMessage, 0, firstBlock.Length);
+
+                    if (length > 4)
+                    {
+                        var remainingBytes = await connection.ReadAsync(length - 4).ConfigureAwait(false);
+                        Buffer.BlockCopy(remainingBytes, 0, obfuscatedMessage, 8, remainingBytes.Length);
+                    }
+
+                    message = RotatedObfuscation.Decode(obfuscatedMessage);
+                }
+                else
+                {
+                    var lengthBytes = await connection.ReadAsync(4).ConfigureAwait(false);
+                    var length = BitConverter.ToInt32(lengthBytes, 0);
+
+                    var bodyBytes = await connection.ReadAsync(length).ConfigureAwait(false);
+                    message = lengthBytes.Concat(bodyBytes).ToArray();
+                }
 
                 if (PeerInit.TryFromByteArray(message, out var peerInit))
                 {
                     // this connection is the result of an unsolicited connection from the remote peer, either to request info or
                     // browse, or to send a file.
-                    Diagnostic.Debug($"PeerInit for connection type {peerInit.ConnectionType} received from {peerInit.Username} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
+                    Diagnostic.Debug($"PeerInit for connection type {peerInit.ConnectionType} received from {peerInit.Username} ({connection.IPEndPoint.Address}:{listenerPort}) (id: {connection.Id})");
 
                     if (peerInit.ConnectionType == Constants.ConnectionType.Peer)
                     {
-                        await SoulseekClient.PeerConnectionManager.AddOrUpdateMessageConnectionAsync(
-                            peerInit.Username,
-                            connection).ConfigureAwait(false);
+                        if (obfuscated)
+                        {
+                            await SoulseekClient.PeerConnectionManager.AddOrUpdateObfuscatedMessageConnectionAsync(
+                                peerInit.Username,
+                                connection).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            await SoulseekClient.PeerConnectionManager.AddOrUpdateMessageConnectionAsync(
+                                peerInit.Username,
+                                connection).ConfigureAwait(false);
+                        }
                     }
                     else if (peerInit.ConnectionType == Constants.ConnectionType.Transfer)
                     {
@@ -104,7 +142,7 @@ namespace Soulseek.Network
                         {
                             // either a random client connected and tried to download something without being told it could,
                             // or a client tried to initiate a transfer as a last-ditch effort to "save" an upload
-                            Diagnostic.Debug($"Unexpected transfer connection for token {peerInit.Token} from {peerInit.Username} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
+                            Diagnostic.Debug($"Unexpected transfer connection for token {peerInit.Token} from {peerInit.Username} ({connection.IPEndPoint.Address}:{listenerPort}) (id: {connection.Id})");
                             transferConnection.Disconnect("Transfer connection rejected: unknown token");
                         }
                     }
@@ -122,12 +160,12 @@ namespace Soulseek.Network
                     // to determine the username of the remote user.
                     if (SoulseekClient.PeerConnectionManager.PendingSolicitations.TryGetValue(pierceFirewall.Token, out var peerUsername))
                     {
-                        Diagnostic.Debug($"Peer PierceFirewall with token {pierceFirewall.Token} received from {peerUsername} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
+                        Diagnostic.Debug($"Peer PierceFirewall with token {pierceFirewall.Token} received from {peerUsername} ({connection.IPEndPoint.Address}:{listenerPort}) (id: {connection.Id})");
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SolicitedPeerConnection, peerUsername, pierceFirewall.Token), connection);
                     }
                     else if (SoulseekClient.DistributedConnectionManager.PendingSolicitations.TryGetValue(pierceFirewall.Token, out var distributedUsername))
                     {
-                        Diagnostic.Debug($"Distributed PierceFirewall with token {pierceFirewall.Token} received from {distributedUsername} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
+                        Diagnostic.Debug($"Distributed PierceFirewall with token {pierceFirewall.Token} received from {distributedUsername} ({connection.IPEndPoint.Address}:{listenerPort}) (id: {connection.Id})");
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SolicitedDistributedConnection, distributedUsername, pierceFirewall.Token), connection);
                     }
                     else if (SoulseekClient.Options.SearchResponseCache != null && SoulseekClient.Options.SearchResponseCache.TryGet(pierceFirewall.Token, out var cachedSearchResponse))
@@ -136,7 +174,7 @@ namespace Soulseek.Network
                         // cache it with the manager for potential reuse, then try to send the pending response.
                         var (username, _, _, _) = cachedSearchResponse;
 
-                        Diagnostic.Debug($"PierceFirewall matching pending search response received from {username} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
+                        Diagnostic.Debug($"PierceFirewall matching pending search response received from {username} ({connection.IPEndPoint.Address}:{listenerPort}) (id: {connection.Id})");
                         await SoulseekClient.PeerConnectionManager.AddOrUpdateMessageConnectionAsync(username, connection).ConfigureAwait(false);
                         await SoulseekClient.SearchResponder.TryRespondAsync(pierceFirewall.Token).ConfigureAwait(false);
                     }

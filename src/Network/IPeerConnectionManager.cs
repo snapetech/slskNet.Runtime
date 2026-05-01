@@ -19,6 +19,9 @@
 //
 //     SPDX-FileCopyrightText: JP Dillingham
 //     SPDX-License-Identifier: GPL-3.0-only
+//
+//     Modified by slskdN Team.
+//     Modified: Added type-1 obfuscated peer-message connection paths.
 // </copyright>
 
 namespace Soulseek.Network
@@ -59,6 +62,14 @@ namespace Soulseek.Network
         /// <param name="incomingConnection">The the accepted connection.</param>
         /// <returns>The operation context.</returns>
         Task AddOrUpdateMessageConnectionAsync(string username, IConnection incomingConnection);
+
+        /// <summary>
+        ///     Adds a new obfuscated message connection from an incoming connection.
+        /// </summary>
+        /// <param name="username">The username of the user from which the connection originated.</param>
+        /// <param name="incomingConnection">The the accepted connection.</param>
+        /// <returns>The operation context.</returns>
+        Task AddOrUpdateObfuscatedMessageConnectionAsync(string username, IConnection incomingConnection);
 
         /// <summary>
         ///     Awaits an incoming transfer connection from the specified <paramref name="username"/> for the specified

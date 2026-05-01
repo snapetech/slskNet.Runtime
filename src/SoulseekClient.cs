@@ -19,6 +19,9 @@
 //
 //     SPDX-FileCopyrightText: JP Dillingham
 //     SPDX-License-Identifier: GPL-3.0-only
+//
+//     Modified by slskdN Team.
+//     Modified: Added type-1 obfuscated peer-message listener, metadata advertisement, and outbound endpoint preference.
 // </copyright>
 
 namespace Soulseek
@@ -588,6 +591,7 @@ namespace Soulseek
         internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, TransferInternal> DownloadDictionary { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
         internal virtual IListener Listener { get; private set; }
+        internal virtual IListener ObfuscatedListener { get; private set; }
         internal virtual IListenerHandler ListenerHandler { get; }
         internal virtual IPeerConnectionManager PeerConnectionManager { get; }
         internal virtual IPeerMessageHandler PeerMessageHandler { get; }
@@ -902,6 +906,7 @@ namespace Soulseek
             if (Options.EnableListener)
             {
                 Listener listener = null;
+                Listener obfuscatedListener = null;
 
                 // probe to see if we can listen on the configured port and address. if this throws, something is either already
                 // listening on this port, or the user has specified a bad interface IP
@@ -909,6 +914,16 @@ namespace Soulseek
                 {
                     listener = new Listener(Options.ListenIPAddress, Options.ListenPort, Options.IncomingConnectionOptions);
                     listener.Start();
+
+                    if (Options.PeerObfuscationOptions.Enabled)
+                    {
+                        obfuscatedListener = new Listener(
+                            Options.ListenIPAddress,
+                            Options.PeerObfuscationOptions.ListenPort,
+                            Options.IncomingConnectionOptions,
+                            obfuscated: true);
+                        obfuscatedListener.Start();
+                    }
                 }
                 catch (Exception)
                 {
@@ -917,6 +932,7 @@ namespace Soulseek
                 finally
                 {
                     listener?.Stop();
+                    obfuscatedListener?.Stop();
                 }
             }
 
@@ -970,6 +986,7 @@ namespace Soulseek
                 message ??= exception?.Message ?? "Client disconnected";
 
                 Listener?.Stop();
+                ObfuscatedListener?.Stop();
 
                 if (ServerConnection != default)
                 {
@@ -2810,6 +2827,7 @@ namespace Soulseek
                 {
                     Disconnect("Client is being disposed", new ObjectDisposedException(GetType().Name));
                     Listener?.Stop();
+                    ObfuscatedListener?.Stop();
 
                     PeerConnectionManager.Dispose();
                     DistributedConnectionManager.Dispose();
@@ -3094,6 +3112,17 @@ namespace Soulseek
                         Listener = new Listener(Options.ListenIPAddress, Options.ListenPort, connectionOptions: Options.IncomingConnectionOptions);
                         Listener.Accepted += ListenerHandler.HandleConnection;
                         Listener.Start();
+
+                        if (Options.PeerObfuscationOptions.Enabled)
+                        {
+                            ObfuscatedListener = new Listener(
+                                Options.ListenIPAddress,
+                                Options.PeerObfuscationOptions.ListenPort,
+                                Options.IncomingConnectionOptions,
+                                obfuscated: true);
+                            ObfuscatedListener.Accepted += ListenerHandler.HandleConnection;
+                            ObfuscatedListener.Start();
+                        }
                     }
 
                     ServerConnection = ConnectionFactory.GetServerConnection(
@@ -3121,7 +3150,7 @@ namespace Soulseek
                     // port of 0 if the notified users attempt to connect (e.g. to re-request uploads). this is still possible,
                     // but much less likely. the server will not accept a listen port command prior to login.
                     var loginBytes = new LoginRequest(MinorVersion, username, password).ToByteArray()
-                        .Concat(new SetListenPortCommand(Options.ListenPort).ToByteArray())
+                        .Concat(CreateSetListenPortCommand().ToByteArray())
                         .ToArray();
 
                     await ServerConnection.WriteAsync(loginBytes, cancellationToken).ConfigureAwait(false);
@@ -3790,6 +3819,13 @@ namespace Soulseek
                         throw new UserOfflineException($"User {username} appears to be offline");
                     }
 
+                    if (Options.PeerObfuscationOptions.Enabled &&
+                        Options.PeerObfuscationOptions.PreferOutbound &&
+                        response.HasObfuscatedEndpoint)
+                    {
+                        return response.ObfuscatedIPEndPoint;
+                    }
+
                     return new IPEndPoint(response.IPAddress, response.Port);
                 }
                 catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
@@ -3979,6 +4015,8 @@ namespace Soulseek
 
                     Listener?.Stop();
                     Listener = null;
+                    ObfuscatedListener?.Stop();
+                    ObfuscatedListener = null;
 
                     Options = Options.With(
                         enableListener: patch.EnableListener,
@@ -3991,6 +4029,17 @@ namespace Soulseek
                         Listener = new Listener(Options.ListenIPAddress, Options.ListenPort, Options.IncomingConnectionOptions);
                         Listener.Accepted += ListenerHandler.HandleConnection;
                         Listener.Start();
+
+                        if (Options.PeerObfuscationOptions.Enabled)
+                        {
+                            ObfuscatedListener = new Listener(
+                                Options.ListenIPAddress,
+                                Options.PeerObfuscationOptions.ListenPort,
+                                Options.IncomingConnectionOptions,
+                                obfuscated: true);
+                            ObfuscatedListener.Accepted += ListenerHandler.HandleConnection;
+                            ObfuscatedListener.Start();
+                        }
                     }
                 }
 
@@ -4200,9 +4249,7 @@ namespace Soulseek
 
         private async Task SendConfigurationMessagesAsync(CancellationToken cancellationToken)
         {
-            // the client sends an undocumented message in the format 02/listen port/01/obfuscated port. we don't support
-            // obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
-            await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
+            await ServerConnection.WriteAsync(CreateSetListenPortCommand(), cancellationToken).ConfigureAwait(false);
 
             await ServerConnection.WriteAsync(new PrivateRoomToggle(Options.AcceptPrivateRoomInvitations), cancellationToken).ConfigureAwait(false);
 
@@ -4219,6 +4266,20 @@ namespace Soulseek
             {
                 throw new SoulseekClientException($"Failed to send private message to user {username}: {ex.Message}", ex);
             }
+        }
+
+        private SetListenPortCommand CreateSetListenPortCommand()
+        {
+            if (!Options.PeerObfuscationOptions.Enabled)
+            {
+                return new SetListenPortCommand(Options.ListenPort);
+            }
+
+            var regularPort = Options.PeerObfuscationOptions.AdvertiseRegularPort ? Options.ListenPort : Options.PeerObfuscationOptions.ListenPort;
+            return new SetListenPortCommand(
+                regularPort,
+                Options.PeerObfuscationOptions.Type,
+                Options.PeerObfuscationOptions.ListenPort);
         }
 
         private async Task SendRoomMessageInternalAsync(string roomName, string message, CancellationToken cancellationToken)

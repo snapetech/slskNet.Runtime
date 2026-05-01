@@ -19,6 +19,9 @@
 //
 //     SPDX-FileCopyrightText: JP Dillingham
 //     SPDX-License-Identifier: GPL-3.0-only
+//
+//     Modified by slskdN Team.
+//     Modified: Added type-1 peer-message obfuscation option patching.
 // </copyright>
 
 namespace Soulseek
@@ -59,6 +62,7 @@ namespace Soulseek
         /// <param name="peerConnectionOptions">The options for peer message connections.</param>
         /// <param name="transferConnectionOptions">The options for peer transfer connections.</param>
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
+        /// <param name="peerObfuscationOptions">The options for type-1 peer-message obfuscation.</param>
         /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
         /// <param name="userEndPointCache">The user endpoint cache to use when resolving user endpoints.</param>
         /// <param name="searchResponseResolver">
@@ -101,6 +105,7 @@ namespace Soulseek
             ConnectionOptions peerConnectionOptions = null,
             ConnectionOptions transferConnectionOptions = null,
             ConnectionOptions incomingConnectionOptions = null,
+            PeerObfuscationOptions peerObfuscationOptions = null,
             ConnectionOptions distributedConnectionOptions = null,
             IUserEndPointCache userEndPointCache = null,
             Func<string, int, SearchQuery, Task<SearchResponse>> searchResponseResolver = null,
@@ -143,6 +148,7 @@ namespace Soulseek
             PeerConnectionOptions = peerConnectionOptions;
             TransferConnectionOptions = transferConnectionOptions;
             IncomingConnectionOptions = incomingConnectionOptions;
+            PeerObfuscationOptions = peerObfuscationOptions;
             DistributedConnectionOptions = distributedConnectionOptions;
 
             UserEndPointCache = userEndPointCache;
@@ -251,6 +257,11 @@ namespace Soulseek
         ///     Gets the options for peer message connections.
         /// </summary>
         public ConnectionOptions PeerConnectionOptions { get; }
+
+        /// <summary>
+        ///     Gets the type-1 peer-message obfuscation options.
+        /// </summary>
+        public PeerObfuscationOptions PeerObfuscationOptions { get; }
 
         /// <summary>
         ///     Gets the delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.

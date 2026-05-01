@@ -19,6 +19,9 @@
 //
 //     SPDX-FileCopyrightText: JP Dillingham
 //     SPDX-License-Identifier: GPL-3.0-only
+//
+//     Modified by slskdN Team.
+//     Modified: Added optional type-1 obfuscated port advertisement fields.
 // </copyright>
 
 namespace Soulseek.Messaging.Messages
@@ -35,15 +38,44 @@ namespace Soulseek.Messaging.Messages
         ///     Initializes a new instance of the <see cref="SetListenPortCommand"/> class.
         /// </summary>
         /// <param name="port">The port on which to listen.</param>
-        public SetListenPortCommand(int port)
+        /// <param name="obfuscationType">The optional obfuscation type to advertise.</param>
+        /// <param name="obfuscatedPort">The optional obfuscated peer-message port to advertise.</param>
+        public SetListenPortCommand(int port, int? obfuscationType = null, int? obfuscatedPort = null)
         {
             if (port < 1024 || port > IPEndPoint.MaxPort)
             {
                 throw new ArgumentOutOfRangeException(nameof(port), port, $"The port must be between 1024 and {IPEndPoint.MaxPort}");
             }
 
+            if (obfuscationType.HasValue != obfuscatedPort.HasValue)
+            {
+                throw new ArgumentException("Obfuscation type and port must be supplied together");
+            }
+
+            if (obfuscationType < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(obfuscationType), obfuscationType, "The obfuscation type must be greater than or equal to zero");
+            }
+
+            if (obfuscatedPort.HasValue && (obfuscatedPort < 1024 || obfuscatedPort > IPEndPoint.MaxPort))
+            {
+                throw new ArgumentOutOfRangeException(nameof(obfuscatedPort), obfuscatedPort, $"The obfuscated port must be between 1024 and {IPEndPoint.MaxPort}");
+            }
+
             Port = port;
+            ObfuscationType = obfuscationType;
+            ObfuscatedPort = obfuscatedPort;
         }
+
+        /// <summary>
+        ///     Gets the optional obfuscated port.
+        /// </summary>
+        public int? ObfuscatedPort { get; }
+
+        /// <summary>
+        ///     Gets the optional obfuscation type.
+        /// </summary>
+        public int? ObfuscationType { get; }
 
         /// <summary>
         ///     Gets the port on which to listen.
@@ -56,10 +88,18 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The constructed byte array.</returns>
         public byte[] ToByteArray()
         {
-            return new MessageBuilder()
+            var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.SetListenPort)
-                .WriteInteger(Port)
-                .Build();
+                .WriteInteger(Port);
+
+            if (ObfuscationType.HasValue)
+            {
+                builder
+                    .WriteInteger(ObfuscationType.Value)
+                    .WriteInteger(ObfuscatedPort.Value);
+            }
+
+            return builder.Build();
         }
     }
 }

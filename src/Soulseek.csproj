@@ -32,15 +32,16 @@
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>10.0.0</Version>
-    <Authors>JP Dillingham</Authors>
-    <Product>Soulseek.NET</Product>
-    <PackageProjectUrl>https://github.com/jpdillingham/Soulseek.NET</PackageProjectUrl>
-    <PackageLicense>https://github.com/jpdillingham/Soulseek.NET/blob/master/LICENSE</PackageLicense>
+    <PackageId>slskNet.Runtime</PackageId>
+    <Version>10.0.0-slsknet.1</Version>
+    <Authors>JP Dillingham; slskdN Team</Authors>
+    <Product>slskNet.Runtime</Product>
+    <PackageProjectUrl>https://github.com/snapetech/slskNet.Runtime</PackageProjectUrl>
+    <PackageLicense>https://github.com/snapetech/slskNet.Runtime/blob/slsknet-runtime-main/LICENSE</PackageLicense>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
-    <Description>A .NET Standard client library for the Soulseek network.</Description>
-    <Copyright>Copyright (c) JP Dillingham</Copyright>
-    <RepositoryUrl>https://github.com/jpdillingham/Soulseek.NET</RepositoryUrl>
+    <Description>A slskdN-maintained .NET Standard runtime transport library for the Soulseek network.</Description>
+    <Copyright>Copyright (c) JP Dillingham and slskdN Team</Copyright>
+    <RepositoryUrl>https://github.com/snapetech/slskNet.Runtime</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>dotnet csharp soulseek soulseek-network</PackageTags>
     <NeutralLanguage>en-US</NeutralLanguage>

@@ -19,6 +19,9 @@
 //
 //     SPDX-FileCopyrightText: JP Dillingham
 //     SPDX-License-Identifier: GPL-3.0-only
+//
+//     Modified by slskdN Team.
+//     Modified: Parse optional type-1 obfuscated port metadata.
 // </copyright>
 
 namespace Soulseek.Messaging.Messages
@@ -37,8 +40,10 @@ namespace Soulseek.Messaging.Messages
         /// <param name="username">The requested peer username.</param>
         /// <param name="ipAddress">The IP address of the peer.</param>
         /// <param name="port">The port on which the peer is listening.</param>
-        public UserAddressResponse(string username, IPAddress ipAddress, int port)
-            : this(username, new IPEndPoint(ipAddress, port))
+        /// <param name="obfuscationType">The peer-message obfuscation type, if advertised.</param>
+        /// <param name="obfuscatedPort">The obfuscated peer-message port, if advertised.</param>
+        public UserAddressResponse(string username, IPAddress ipAddress, int port, int obfuscationType = 0, int obfuscatedPort = 0)
+            : this(username, new IPEndPoint(ipAddress, port), obfuscationType, obfuscatedPort)
         {
         }
 
@@ -47,14 +52,38 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="username">The requested peer username.</param>
         /// <param name="endpoint">The IP endpoint of the peer.</param>
-        public UserAddressResponse(string username, IPEndPoint endpoint)
+        /// <param name="obfuscationType">The peer-message obfuscation type, if advertised.</param>
+        /// <param name="obfuscatedPort">The obfuscated peer-message port, if advertised.</param>
+        public UserAddressResponse(string username, IPEndPoint endpoint, int obfuscationType = 0, int obfuscatedPort = 0)
         {
             Username = username;
             IPEndPoint = endpoint;
+            ObfuscationType = obfuscationType;
+            ObfuscatedPort = obfuscatedPort;
 
             IPAddress = IPEndPoint.Address;
             Port = IPEndPoint.Port;
         }
+
+        /// <summary>
+        ///     Gets the obfuscated peer-message endpoint, if advertised.
+        /// </summary>
+        public IPEndPoint ObfuscatedIPEndPoint => HasObfuscatedEndpoint ? new IPEndPoint(IPAddress, ObfuscatedPort) : null;
+
+        /// <summary>
+        ///     Gets the obfuscated peer-message port, if advertised.
+        /// </summary>
+        public int ObfuscatedPort { get; }
+
+        /// <summary>
+        ///     Gets the peer-message obfuscation type, if advertised.
+        /// </summary>
+        public int ObfuscationType { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether compatible obfuscated peer-message metadata was advertised.
+        /// </summary>
+        public bool HasObfuscatedEndpoint => ObfuscationType == 1 && ObfuscatedPort > 0 && ObfuscatedPort <= IPEndPoint.MaxPort;
 
         /// <summary>
         ///     Gets the IP address of the peer.
@@ -98,8 +127,16 @@ namespace Soulseek.Messaging.Messages
             var ipAddress = new IPAddress(ipBytes);
 
             var port = reader.ReadInteger();
+            var obfuscationType = 0;
+            var obfuscatedPort = 0;
 
-            return new UserAddressResponse(username, ipAddress, port);
+            if (reader.HasMoreData)
+            {
+                obfuscationType = reader.ReadInteger();
+                obfuscatedPort = BitConverter.ToUInt16(reader.ReadBytes(2), 0);
+            }
+
+            return new UserAddressResponse(username, ipAddress, port, obfuscationType, obfuscatedPort);
         }
     }
 }

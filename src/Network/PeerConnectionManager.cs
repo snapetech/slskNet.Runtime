@@ -19,6 +19,9 @@
 //
 //     SPDX-FileCopyrightText: JP Dillingham
 //     SPDX-License-Identifier: GPL-3.0-only
+//
+//     Modified by slskdN Team.
+//     Modified: Added type-1 obfuscated peer-message connection paths.
 // </copyright>
 
 namespace Soulseek.Network
@@ -102,7 +105,19 @@ namespace Soulseek.Network
         /// <param name="username">The username of the user from which the connection originated.</param>
         /// <param name="incomingConnection">The the accepted connection.</param>
         /// <returns>The operation context.</returns>
-        public async Task AddOrUpdateMessageConnectionAsync(string username, IConnection incomingConnection)
+        public Task AddOrUpdateMessageConnectionAsync(string username, IConnection incomingConnection)
+            => AddOrUpdateMessageConnectionAsync(username, incomingConnection, obfuscated: false);
+
+        /// <summary>
+        ///     Adds a new obfuscated message connection from an incoming connection.
+        /// </summary>
+        /// <param name="username">The username of the user from which the connection originated.</param>
+        /// <param name="incomingConnection">The the accepted connection.</param>
+        /// <returns>The operation context.</returns>
+        public Task AddOrUpdateObfuscatedMessageConnectionAsync(string username, IConnection incomingConnection)
+            => AddOrUpdateMessageConnectionAsync(username, incomingConnection, obfuscated: true);
+
+        private async Task AddOrUpdateMessageConnectionAsync(string username, IConnection incomingConnection, bool obfuscated)
         {
             var c = incomingConnection;
 
@@ -126,11 +141,17 @@ namespace Soulseek.Network
             {
                 Diagnostic.Debug($"Inbound message connection to {username} ({c.IPEndPoint}) accepted. (type: {c.Type}, id: {c.Id})");
 
-                var connection = ConnectionFactory.GetMessageConnection(
-                    username,
-                    c.IPEndPoint,
-                    SoulseekClient.Options.PeerConnectionOptions,
-                    c.HandoffTcpClient());
+                var connection = obfuscated
+                    ? ConnectionFactory.GetObfuscatedMessageConnection(
+                        username,
+                        c.IPEndPoint,
+                        SoulseekClient.Options.PeerConnectionOptions,
+                        c.HandoffTcpClient())
+                    : ConnectionFactory.GetMessageConnection(
+                        username,
+                        c.IPEndPoint,
+                        SoulseekClient.Options.PeerConnectionOptions,
+                        c.HandoffTcpClient());
 
                 Diagnostic.Debug($"Inbound message connection to {username} ({connection.IPEndPoint}) handed off. (old: {c.Id}, new: {connection.Id})");
                 c.Dispose();
@@ -344,12 +365,22 @@ namespace Soulseek.Network
             {
                 cached = false;
 
-                Diagnostic.Debug($"Attempting inbound indirect message connection to {r.Username} ({r.IPEndPoint}) for token {r.Token}");
+                var useObfuscated = SoulseekClient.Options.PeerObfuscationOptions.Enabled &&
+                    SoulseekClient.Options.PeerObfuscationOptions.PreferOutbound &&
+                    r.HasObfuscatedEndpoint;
+                var endPoint = useObfuscated ? r.ObfuscatedIPEndPoint : r.IPEndPoint;
 
-                var connection = ConnectionFactory.GetMessageConnection(
-                    r.Username,
-                    r.IPEndPoint,
-                    SoulseekClient.Options.PeerConnectionOptions);
+                Diagnostic.Debug($"Attempting inbound indirect message connection to {r.Username} ({endPoint}) for token {r.Token}");
+
+                var connection = useObfuscated
+                    ? ConnectionFactory.GetObfuscatedMessageConnection(
+                        r.Username,
+                        endPoint,
+                        SoulseekClient.Options.PeerConnectionOptions)
+                    : ConnectionFactory.GetMessageConnection(
+                        r.Username,
+                        endPoint,
+                        SoulseekClient.Options.PeerConnectionOptions);
 
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Indirect;
                 connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
@@ -365,8 +396,8 @@ namespace Soulseek.Network
                     {
                         await connection.ConnectAsync(cts.Token).ConfigureAwait(false);
 
-                        var request = new PierceFirewall(r.Token);
-                        await connection.WriteAsync(request.ToByteArray(), cts.Token).ConfigureAwait(false);
+                        var request = new PierceFirewall(r.Token).ToByteArray();
+                        await connection.WriteAsync(useObfuscated ? RotatedObfuscation.Encode(request) : request, cts.Token).ConfigureAwait(false);
                     }
                     catch
                     {
@@ -448,7 +479,16 @@ namespace Soulseek.Network
                 var direct = GetMessageConnectionOutboundDirectAsync(username, ipEndPoint, directLinkedCts.Token);
                 var indirect = GetMessageConnectionOutboundIndirectAsync(username, solicitationToken, indirectLinkedCts.Token);
 
+                Task<IMessageConnection> obfuscated = null;
                 var tasks = new[] { direct, indirect }.ToList();
+
+                if (SoulseekClient.Options.PeerObfuscationOptions.Enabled &&
+                    SoulseekClient.Options.PeerObfuscationOptions.PreferOutbound)
+                {
+                    obfuscated = GetMessageConnectionOutboundObfuscatedAsync(username, ipEndPoint, directLinkedCts.Token);
+                    tasks.Insert(0, obfuscated);
+                }
+
                 Task<IMessageConnection> task;
 
                 do
@@ -469,7 +509,8 @@ namespace Soulseek.Network
                 connection.Disconnected += MessageConnection_Disconnected;
                 connection.Disconnected -= MessageConnectionProvisional_Disconnected;
 
-                var isDirect = task == direct;
+                var isDirect = task == direct || task == obfuscated;
+                var isObfuscated = obfuscated != null && task == obfuscated;
 
                 Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} message connection to {username} ({ipEndPoint}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection.");
                 (isDirect ? indirectCts : directCts).Cancel();
@@ -479,7 +520,8 @@ namespace Soulseek.Network
                     if (isDirect)
                     {
                         var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken());
-                        await connection.WriteAsync(request.ToByteArray(), cancellationToken).ConfigureAwait(false);
+                        var requestBytes = request.ToByteArray();
+                        await connection.WriteAsync(isObfuscated ? RotatedObfuscation.Encode(requestBytes) : requestBytes, cancellationToken).ConfigureAwait(false);
                     }
                     else
                     {
@@ -721,6 +763,41 @@ namespace Soulseek.Network
             }
 
             Diagnostic.Debug($"Direct message connection to {username} ({ipEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+            return connection;
+        }
+
+        private async Task<IMessageConnection> GetMessageConnectionOutboundObfuscatedAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
+        {
+            if (!SoulseekClient.Options.PeerObfuscationOptions.Enabled)
+            {
+                throw new ConnectionException("Obfuscated peer-message connections are disabled");
+            }
+
+            Diagnostic.Debug($"Attempting obfuscated direct message connection to {username} ({ipEndPoint})");
+
+            var connection = ConnectionFactory.GetObfuscatedMessageConnection(
+                username,
+                ipEndPoint,
+                SoulseekClient.Options.PeerConnectionOptions);
+
+            connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Direct;
+            connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
+            connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
+            connection.MessageWritten += SoulseekClient.PeerMessageHandler.HandleMessageWritten;
+            connection.Disconnected += MessageConnectionProvisional_Disconnected;
+
+            try
+            {
+                await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Diagnostic.Debug($"Failed to establish an obfuscated direct message connection to {username} ({ipEndPoint}): {ex.Message}");
+                connection.Dispose();
+                throw;
+            }
+
+            Diagnostic.Debug($"Obfuscated direct message connection to {username} ({ipEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
             return connection;
         }
 

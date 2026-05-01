@@ -19,6 +19,9 @@
 //
 //     SPDX-FileCopyrightText: JP Dillingham
 //     SPDX-License-Identifier: GPL-3.0-only
+//
+//     Modified by slskdN Team.
+//     Modified: Added obfuscated listener identity.
 // </copyright>
 
 namespace Soulseek.Network.Tcp
@@ -50,6 +53,11 @@ namespace Soulseek.Network.Tcp
         ///     Gets a value indicating whether the listener is listening for connections.
         /// </summary>
         bool Listening { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether accepted init frames are type-1 obfuscated.
+        /// </summary>
+        bool Obfuscated { get; }
 
         /// <summary>
         ///     Gets the port of the listener.

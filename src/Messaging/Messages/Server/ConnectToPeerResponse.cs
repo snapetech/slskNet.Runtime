@@ -19,6 +19,9 @@
 //
 //     SPDX-FileCopyrightText: JP Dillingham
 //     SPDX-License-Identifier: GPL-3.0-only
+//
+//     Modified by slskdN Team.
+//     Modified: Parse optional type-1 obfuscated port metadata.
 // </copyright>
 
 namespace Soulseek.Messaging.Messages
@@ -40,8 +43,10 @@ namespace Soulseek.Messaging.Messages
         /// <param name="port">The port to which to connect.</param>
         /// <param name="token">The unique connection token.</param>
         /// <param name="isPrivileged">A value indicating whether the user is privileged.</param>
-        public ConnectToPeerResponse(string username, string type, IPAddress ipAddress, int port, int token, bool isPrivileged)
-            : this(username, type, new IPEndPoint(ipAddress, port), token, isPrivileged)
+        /// <param name="obfuscationType">The peer-message obfuscation type, if advertised.</param>
+        /// <param name="obfuscatedPort">The obfuscated peer-message port, if advertised.</param>
+        public ConnectToPeerResponse(string username, string type, IPAddress ipAddress, int port, int token, bool isPrivileged, int obfuscationType = 0, int obfuscatedPort = 0)
+            : this(username, type, new IPEndPoint(ipAddress, port), token, isPrivileged, obfuscationType, obfuscatedPort)
         {
         }
 
@@ -53,17 +58,41 @@ namespace Soulseek.Messaging.Messages
         /// <param name="endpoint">The IP endpoint to which to connect.</param>
         /// <param name="token">The unique connection token.</param>
         /// <param name="isPrivileged">A value indicating whether the user is privileged.</param>
-        public ConnectToPeerResponse(string username, string type, IPEndPoint endpoint, int token, bool isPrivileged)
+        /// <param name="obfuscationType">The peer-message obfuscation type, if advertised.</param>
+        /// <param name="obfuscatedPort">The obfuscated peer-message port, if advertised.</param>
+        public ConnectToPeerResponse(string username, string type, IPEndPoint endpoint, int token, bool isPrivileged, int obfuscationType = 0, int obfuscatedPort = 0)
         {
             Username = username;
             Type = type;
             Token = token;
             IPEndPoint = endpoint;
             IsPrivileged = isPrivileged;
+            ObfuscationType = obfuscationType;
+            ObfuscatedPort = obfuscatedPort;
 
             IPAddress = IPEndPoint.Address;
             Port = IPEndPoint.Port;
         }
+
+        /// <summary>
+        ///     Gets the obfuscated peer-message endpoint, if advertised.
+        /// </summary>
+        public IPEndPoint ObfuscatedIPEndPoint => HasObfuscatedEndpoint ? new IPEndPoint(IPAddress, ObfuscatedPort) : null;
+
+        /// <summary>
+        ///     Gets the obfuscated peer-message port, if advertised.
+        /// </summary>
+        public int ObfuscatedPort { get; }
+
+        /// <summary>
+        ///     Gets the peer-message obfuscation type, if advertised.
+        /// </summary>
+        public int ObfuscationType { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether compatible obfuscated peer-message metadata was advertised.
+        /// </summary>
+        public bool HasObfuscatedEndpoint => ObfuscationType == 1 && ObfuscatedPort > 0 && ObfuscatedPort <= IPEndPoint.MaxPort;
 
         /// <summary>
         ///     Gets the IP address to which to connect.
@@ -125,8 +154,16 @@ namespace Soulseek.Messaging.Messages
             var port = reader.ReadInteger();
             var token = reader.ReadInteger();
             var isPrivileged = reader.ReadByte() > 0;
+            var obfuscationType = 0;
+            var obfuscatedPort = 0;
 
-            return new ConnectToPeerResponse(username, type, ipAddress, port, token, isPrivileged);
+            if (reader.HasMoreData)
+            {
+                obfuscationType = reader.ReadInteger();
+                obfuscatedPort = reader.ReadInteger();
+            }
+
+            return new ConnectToPeerResponse(username, type, ipAddress, port, token, isPrivileged, obfuscationType, obfuscatedPort);
         }
     }
 }
