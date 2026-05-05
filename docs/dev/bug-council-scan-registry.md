@@ -22,6 +22,9 @@ Current scan classes:
 | Protocol count and length allocation | Find parser loops and allocations driven by untrusted payload fields. |
 | Protocol scalar emission | Find outbound message scalars that may need constructor guards. |
 | Resolver output and raw stream handling | Find application-supplied data that crosses peer serialization boundaries. |
+| Resolver delegate surface | Find public resolver and enqueue delegate configuration surfaces. |
+| Peer resolver dispatch | Find peer handler points that turn resolver output into peer messages. |
+| Transfer stream factory | Find transfer input/output stream factory ownership and lifecycle paths. |
 | Example Web API path/request/lifecycle | Find path containment, request validation, and disposable ownership issues in the example app. |
 | Security-sensitive material | Find high-confidence private keys and token patterns. |
 
