@@ -199,7 +199,14 @@ namespace Soulseek
         private static byte[] ReadBytes(BinaryReader reader, int maximumLength)
         {
             var length = ReadCount(reader, "byte array", maximumLength);
-            return reader.ReadBytes(length);
+            var bytes = reader.ReadBytes(length);
+
+            if (bytes.Length != length)
+            {
+                throw new MessageException($"Invalid byte array length: expected {length}, received {bytes.Length}");
+            }
+
+            return bytes;
         }
 
         private static string ReadString(BinaryReader reader)

@@ -138,6 +138,11 @@ namespace Soulseek.Messaging
         /// <returns>The read bytes.</returns>
         public byte[] ReadBytes(int count)
         {
+            if (count < 0)
+            {
+                throw new MessageReadException($"Invalid byte count: {count}");
+            }
+
             if (count > Payload.Length - Position)
             {
                 throw new MessageReadException("Requested bytes extend beyond the length of the message payload");
@@ -221,6 +226,11 @@ namespace Soulseek.Messaging
         public (string Value, CharacterEncoding Encoding) ReadStringAndEncoding(CharacterEncoding encoding = null)
         {
             var length = ReadInteger();
+
+            if (length < 0)
+            {
+                throw new MessageReadException($"Invalid string length: {length}");
+            }
 
             if (length > Payload.Length - Position)
             {
