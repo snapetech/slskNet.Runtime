@@ -39,6 +39,11 @@ namespace Soulseek.Messaging
         where T : Enum
     {
         /// <summary>
+        ///     The maximum allowed decompressed payload length.
+        /// </summary>
+        internal const int MaximumDecompressedPayloadLength = 64 * 1024 * 1024;
+
+        /// <summary>
         ///     Initializes a new instance of the <see cref="MessageReader{T}"/> class from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array with which to initialize the reader.</param>
@@ -293,16 +298,50 @@ namespace Soulseek.Messaging
 
             try
             {
-                using var outMemoryStream = new MemoryStream();
+                using var outMemoryStream = new BoundedMemoryStream(MaximumDecompressedPayloadLength);
                 using var outZStream = new ZOutputStream(outMemoryStream);
                 using var inMemoryStream = new MemoryStream(inData);
                 CopyStream(inMemoryStream, outZStream);
                 outZStream.finish();
                 outData = outMemoryStream.ToArray();
             }
+            catch (MessageCompressionException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 throw new MessageCompressionException("Failed to decompress the message payload", ex);
+            }
+        }
+
+        private sealed class BoundedMemoryStream : MemoryStream
+        {
+            public BoundedMemoryStream(int maximumLength)
+            {
+                MaximumLength = maximumLength;
+            }
+
+            private int MaximumLength { get; }
+
+            public override void Write(byte[] buffer, int offset, int count)
+            {
+                ThrowIfWriteExceedsLimit(count);
+                base.Write(buffer, offset, count);
+            }
+
+            public override void WriteByte(byte value)
+            {
+                ThrowIfWriteExceedsLimit(1);
+                base.WriteByte(value);
+            }
+
+            private void ThrowIfWriteExceedsLimit(int count)
+            {
+                if (Length + count > MaximumLength)
+                {
+                    throw new MessageCompressionException($"Decompressed message payload exceeds the maximum allowed length of {MaximumLength} bytes");
+                }
             }
         }
     }

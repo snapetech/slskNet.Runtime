@@ -553,6 +553,26 @@ namespace Soulseek.Tests.Unit.Messaging
             Assert.IsType<MessageCompressionException>(ex.InnerException.InnerException);
         }
 
+        [Trait("Category", "Decompress")]
+        [Fact(DisplayName = "Decompress throws MessageCompressionException when payload exceeds maximum length")]
+        public void Decompress_Throws_MessageCompressionException_When_Payload_Exceeds_Maximum_Length()
+        {
+            var payload = new byte[MessageReader<MessageCode.Peer>.MaximumDecompressedPayloadLength + 1];
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.InfoRequest)
+                .WriteBytes(payload)
+                .Compress()
+                .Build();
+
+            var reader = new MessageReader<MessageCode.Peer>(msg);
+
+            var ex = Record.Exception(() => reader.Decompress());
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageCompressionException>(ex);
+            Assert.Contains("maximum allowed length", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+        }
+
         [Trait("Category", "HasMoreData")]
         [Fact(DisplayName = "HasMoreData returns expected value")]
         public void HasMoreData_Returns_Expected_Value()
