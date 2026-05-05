@@ -1141,6 +1141,11 @@ namespace Soulseek
                 throw new ArgumentNullException(nameof(size), "The size must be specified if the start offset is not zero");
             }
 
+            if (size.HasValue && startOffset > size.Value)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be less than or equal to the size");
+            }
+
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
                 throw new InvalidOperationException($"The server connection must be connected and logged in to download files (currently: {State})");
@@ -1238,6 +1243,11 @@ namespace Soulseek
             if (startOffset > 0 && !size.HasValue)
             {
                 throw new ArgumentNullException(nameof(size), "The size must be specified if the start offset is not zero");
+            }
+
+            if (size.HasValue && startOffset > size.Value)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be less than or equal to the size");
             }
 
             if (outputStreamFactory == null)
