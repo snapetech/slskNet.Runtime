@@ -32,7 +32,7 @@ namespace Soulseek
     /// </summary>
     internal sealed class TokenBucket : ITokenBucket, IDisposable
     {
-        private TaskCompletionSource<bool> waitForReset = new TaskCompletionSource<bool>();
+        private TaskCompletionSource<bool> waitForReset = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="TokenBucket"/> class.
@@ -184,6 +184,6 @@ namespace Soulseek
         }
 
         private void Reset()
-            => Interlocked.Exchange(ref waitForReset, new TaskCompletionSource<bool>()).SetResult(true);
+            => Interlocked.Exchange(ref waitForReset, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously)).SetResult(true);
     }
 }
