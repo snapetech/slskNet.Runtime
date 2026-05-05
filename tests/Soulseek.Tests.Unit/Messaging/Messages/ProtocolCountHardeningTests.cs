@@ -110,6 +110,18 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Throws<MessageException>(() => NetInfoNotification.FromByteArray(bytes));
         }
 
+        [Fact(DisplayName = "Room list rejects impossible room name count")]
+        public void Room_List_Rejects_Impossible_Room_Name_Count()
+        {
+            var bytes = new MessageBuilder()
+                .WriteCode(MessageCode.Server.RoomList)
+                .WriteInteger(3)
+                .WriteString("room")
+                .Build();
+
+            Assert.Throws<MessageException>(() => RoomListResponseFactory.FromByteArray(bytes));
+        }
+
         [Fact(DisplayName = "Private room owned list rejects negative user count")]
         public void Private_Room_Owned_List_Rejects_Negative_User_Count()
         {

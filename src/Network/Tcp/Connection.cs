@@ -653,6 +653,11 @@ namespace Soulseek.Network.Tcp
 
                     var bytesGranted = Math.Min(bytesToRead, await governor(bytesToRead, cancellationToken).ConfigureAwait(false));
 
+                    if (bytesGranted <= 0)
+                    {
+                        throw new ConnectionReadException($"Read governor granted {bytesGranted} bytes; reads require forward progress");
+                    }
+
 #if NETSTANDARD2_0
                     var bytesRead = await Stream.ReadAsync(buffer, 0, bytesGranted, cancellationToken).ConfigureAwait(false);
 #else
@@ -779,6 +784,11 @@ namespace Soulseek.Network.Tcp
                     var bytesToRead = bytesRemaining >= buffer.Length ? buffer.Length : (int)bytesRemaining;
 
                     var bytesGranted = Math.Min(bytesToRead, await governor(bytesToRead, cancellationToken).ConfigureAwait(false));
+
+                    if (bytesGranted <= 0)
+                    {
+                        throw new ConnectionWriteException($"Write governor granted {bytesGranted} bytes; writes require forward progress");
+                    }
 
 #if NETSTANDARD2_0
                     var bytesRead = await inputStream.ReadAsync(buffer, 0, bytesGranted, cancellationToken).ConfigureAwait(false);

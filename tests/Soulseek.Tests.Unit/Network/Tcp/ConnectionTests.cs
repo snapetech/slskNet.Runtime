@@ -1141,6 +1141,33 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Write")]
+        [Theory(DisplayName = "Write stream throws when governor grants zero bytes"), AutoData]
+        public async Task Write_Stream_Throws_When_Governor_Grants_Zero_Bytes(IPEndPoint endpoint)
+        {
+            var s = new Mock<INetworkStream>();
+            var t = new Mock<ITcpClient>();
+
+            var data = new byte[] { 0x0, 0x1 };
+
+            using (var stream = new MemoryStream(data))
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(() => c.WriteAsync(1, stream, governor: (x, y) => Task.FromResult(0)));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<ConnectionWriteException>(ex);
+                    s.Verify(m => m.WriteAsync(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<CancellationToken>()), Times.Never);
+                }
+            }
+        }
+
+        [Trait("Category", "Write")]
         [Theory(DisplayName = "Write stream does not throw given null reporter"), AutoData]
         public async Task Write_Stream_Handles_Null_Reporter(IPEndPoint endpoint)
         {
@@ -1640,6 +1667,31 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                     Assert.Null(ex);
                     s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
+        [Theory(DisplayName = "Read to stream throws when governor grants zero bytes"), AutoData]
+        public async Task Read_To_Stream_Throws_When_Governor_Grants_Zero_Bytes(IPEndPoint endpoint)
+        {
+            var s = new Mock<INetworkStream>();
+            var t = new Mock<ITcpClient>();
+
+            using (var stream = new MemoryStream())
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(() => c.ReadAsync(1, outputStream: stream, governor: (x, y) => Task.FromResult(0)));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<ConnectionReadException>(ex);
+                    s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Never);
                 }
             }
         }
