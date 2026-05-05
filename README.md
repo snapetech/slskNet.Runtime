@@ -39,6 +39,7 @@ The forked runtime remains wire-compatible with legacy Soulseek clients when def
 - When obfuscation is enabled, the regular Soulseek listen port must still be advertised. This keeps legacy clients able to connect by normal peer-message, distributed-message, and file-transfer paths.
 - Outbound obfuscated dials are attempted only when `PeerObfuscationOptions.PreferOutbound` is enabled and the remote peer has advertised a compatible type-1 obfuscated endpoint.
 - Regular direct and indirect peer/distributed/transfer connection attempts remain available as fallback paths.
+- If an obfuscated distributed or transfer candidate connects first but fails setup negotiation, regular fallback candidates are still allowed to complete before the operation fails.
 - Interest, recommendation, similar-user, item-recommendation, hated-interest, and multi-user private-message commands are only sent when the application explicitly calls the corresponding API.
 - Passive handling of `CannotCreateRoom` only changes local error reporting for a failed room join; it does not alter room join wire format.
 
@@ -73,6 +74,7 @@ Validation notes:
 - Local loopback matrix tests exercise obfuscated and regular peer-message (`P`) roundtrips.
 - Local loopback matrix tests exercise obfuscated and regular distributed-message (`D`) roundtrips.
 - Local loopback matrix tests exercise obfuscated file-transfer (`F`) byte and stream payloads plus regular transfer fallback.
+- Manager-level tests cover obfuscated inbound transfer handoff, inbound indirect transfer fallback, outbound transfer preference/fallback, and distributed parent preference/fallback.
 - These tests prove runtime framing and fallback behavior over real local TCP sockets; live third-party client interoperability still needs live-network validation.
 
 ### Interests and recommendations

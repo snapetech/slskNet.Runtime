@@ -46,7 +46,7 @@ Legacy impact:
 
 - Legacy peers can still connect to the regular Soulseek listen port.
 - If a legacy peer ignores obfuscation metadata, no compatibility issue is introduced.
-- If an obfuscated outbound attempt fails, regular direct or indirect connection setup can still succeed.
+- If an obfuscated outbound attempt fails or connects first and then fails setup negotiation, regular direct or indirect connection setup can still succeed.
 
 Security and safety notes:
 
@@ -59,6 +59,7 @@ Validation:
 
 - `ObfuscatedConnectionMatrixTests` uses loopback TCP sockets to prove obfuscated peer-message (`P`), distributed-message (`D`), and file-transfer (`F`) runtime paths.
 - The same matrix covers regular peer-message, distributed-message, and transfer fallback so compatibility paths stay under test alongside obfuscated paths.
+- Manager-level tests cover obfuscated inbound transfer handoff, inbound indirect transfer fallback, outbound transfer preference/fallback, and distributed parent preference/fallback.
 - The matrix is runtime-local; it does not replace separate live-network interoperability tests against arbitrary third-party Soulseek clients.
 
 ## Interest and Recommendation APIs
