@@ -6,29 +6,30 @@ This document tracks protocol and runtime behavior added after the fork from Sou
 
 The fork is intended to remain compatible with legacy Soulseek clients.
 
-Default behavior preserves the upstream wire behavior. New outbound protocol messages are only sent when an application calls the new APIs. Peer-message obfuscation is disabled by default, and enabling it still requires the regular peer-message port to be advertised.
+Default behavior preserves the upstream wire behavior. New outbound protocol messages are only sent when an application calls the new APIs. Peer/distributed/transfer obfuscation is disabled by default, and enabling it still requires the regular Soulseek listen port to be advertised.
 
 Compatibility rules used by the implementation:
 
-- Do not replace the regular peer-message listener with an obfuscated-only listener.
-- Do not obfuscate file-transfer or distributed-network connections.
-- Do not attempt outbound obfuscated peer-message connections unless the remote peer has advertised a compatible type-1 endpoint.
-- Keep regular direct and indirect peer-message connection attempts available as fallback paths.
+- Do not replace the regular listener with an obfuscated-only listener.
+- Do not attempt outbound obfuscated peer/distributed/transfer connections unless the remote peer has advertised a compatible type-1 endpoint.
+- Keep regular direct and indirect peer/distributed/transfer connection attempts available as fallback paths.
 - Fail closed on malformed new protocol responses rather than accepting impossible counts or partial repeated data.
 
-## Type-1 Peer-message Obfuscation
+## Type-1 Peer/distributed/transfer Obfuscation
 
-Type-1 obfuscation support covers peer-message streams only. It is not encryption and does not change transfer payload transport.
+Type-1 obfuscation support covers peer-message (`P`), distributed-message (`D`), and file-transfer (`F`) streams. It is not encryption and keeps regular fallback paths available.
 
 Implementation pieces:
 
 - `PeerObfuscationOptions` controls runtime behavior.
 - `SetListenPortCommand` can append obfuscation type and obfuscated port metadata.
 - `UserAddressResponse` and `ConnectToPeerResponse` parse advertised obfuscation metadata.
-- `SoulseekClient` can start a dedicated obfuscated peer-message listener.
-- `ListenerHandler` decodes the initial obfuscated peer-message frame on obfuscated listeners.
-- `MessageConnection` reads and writes obfuscated peer-message frames when the connection is marked obfuscated.
+- `SoulseekClient` can start a dedicated obfuscated listener.
+- `ListenerHandler` decodes the initial obfuscated peer/distributed/transfer frame on obfuscated listeners.
+- `MessageConnection` reads and writes obfuscated message frames when the connection is marked obfuscated.
 - `PeerConnectionManager` can prefer a cached compatible obfuscated endpoint while racing regular direct and indirect paths.
+- `DistributedConnectionManager` can accept obfuscated distributed children, complete obfuscated solicited distributed `PierceFirewall` handoffs, and prefer compatible obfuscated distributed parent candidates while retaining regular direct/indirect fallback paths.
+- `ObfuscatedTransferConnection` carries file-transfer setup and payload bytes in type-1 frames while `PeerConnectionManager` keeps regular transfer candidates available.
 
 Expected use:
 
@@ -43,13 +44,13 @@ var options = new SoulseekClientOptions(
 
 Legacy impact:
 
-- Legacy peers can still connect to the regular peer-message port.
+- Legacy peers can still connect to the regular Soulseek listen port.
 - If a legacy peer ignores obfuscation metadata, no compatibility issue is introduced.
 - If an obfuscated outbound attempt fails, regular direct or indirect connection setup can still succeed.
 
 Security and safety notes:
 
-- Obfuscation hides the peer-message frame shape from casual inspection, but it does not authenticate peers, encrypt payloads, hide IP addresses, or protect file-transfer traffic.
+- Obfuscation hides peer/distributed/transfer frame shape from casual inspection, but it does not authenticate peers, encrypt payloads, or hide IP addresses.
 - Obfuscated listener input is decoded only after validating the advertised obfuscated frame length.
 - Outbound obfuscated connection preference never disables indirect connection fallback.
 - The runtime requires regular-port advertisement when obfuscation is enabled; callers cannot use this implementation to create an obfuscated-only Soulseek client.
@@ -147,3 +148,45 @@ Validation behavior:
 - Successful parses return read-only collections without extra list copies.
 
 This protects the runtime from malformed server responses and avoids silent acceptance of partial or contradictory data.
+
+## First Next Feature Decisions
+
+The first next tranche after syncing upstream is implemented in priority order.
+
+1. Versioned slskdN peer capability handshake
+
+`PeerCapabilityEnvelope` reserves custom peer-message code `0x534C534B` and carries a version, message type, nonce, and descriptor. The built-in handler is registered by `SoulseekClient`, so applications do not need to wire the parser manually. The code is reserved from the public custom-message handler API to keep runtime negotiation stable. Sending is opt-in through `SendPeerCapabilityAsync`; inbound `Hello` messages are recorded and acknowledged when a local descriptor has been configured.
+
+2. Runtime peer capability registry
+
+`PeerCapabilityRegistry` stores the latest descriptor seen per Soulseek username with case-insensitive lookup and update events. `SoulseekClient.PeerCapabilities` exposes the registry and `PeerCapabilityReceived` exposes the same update stream from the client. The decision is intentionally username-keyed because the Soulseek protocol identity available during peer-message exchange is username-first; future overlay peer IDs live inside the descriptor rather than replacing the protocol identity.
+
+3. Wishlist scheduler using `WishlistInterval`
+
+`WishlistSearchScheduler` runs explicit wishlist searches for caller-provided terms using `SearchScope.Wishlist`. It uses the server-provided `ServerInfo.WishlistInterval` when available, with a minimum interval guard and optional override for controlled tests or applications that need stricter pacing. The scheduler does not persist wishlist terms and does not auto-start; applications opt in.
+
+4. Signed descriptor primitives
+
+Descriptors are signed over a canonical binary form that excludes the signature itself. `Ed25519PeerDescriptorSigner` uses BouncyCastle's netstandard-compatible Ed25519 implementation and derives a stable peer id from the public key. Verification is a primitive, not an authorization decision; callers can decide whether unsigned descriptors are acceptable for their deployment.
+
+5. Search/rendezvous helper layer
+
+`MeshRendezvousService` wraps the existing interest and similar-user protocol as a discovery helper. It registers the public `slskdn-mesh-v1` interest tag, gets similar users, and can opportunistically probe discovered users for capability descriptors. Probing is disabled by default so the helper remains passive unless the application chooses active discovery.
+
+6. Distributed-network interoperability audit
+
+No new distributed wire format was added. The implementation keeps upstream-compatible distributed message handling, can carry distributed (`D`) connections over type-1 obfuscated framing when both peers advertise compatible metadata, and uses the normal peer-message channel for slskdN capability negotiation. This avoids coupling overlay discovery to parent/child distributed search routing and preserves compatibility with clients that only understand the public Soulseek distributed network.
+
+7. Full parser count-hardening pass
+
+The shared `ProtocolCountReader` now supports server and peer message readers. The pass covers high-risk repeated-count parsers used by search responses, browse responses, folder contents, room joins, room lists, private room user lists, and room tickers. Existing missing-data behavior is preserved where tests depended on `MessageReadException`; impossible counts and mismatched parallel room lists fail closed with `MessageException`.
+
+8. Documentation and test coverage
+
+The implementation has focused unit coverage for capability envelope round trips, registry updates, Ed25519 signing and verification, rendezvous probing, wishlist scheduling, and parser hardening. Existing distributed-network tests remain the compatibility guard for the upstream message path.
+
+## License Notes
+
+The upstream merge did not change this fork's declared package license: `GPL-3.0-only` remains in the project metadata and packaged `LICENSE`/`NOTICE` files remain included.
+
+The new Ed25519 implementation adds `BouncyCastle.Cryptography` `2.6.2`. NuGet metadata lists it under the MIT license, which is compatible with this GPL-3.0-only distribution model; it does not require changing the fork license. No credential material or generated secrets are committed by these changes.

@@ -118,6 +118,11 @@ namespace Soulseek
         event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when a slskdN peer capability descriptor is received.
+        /// </summary>
+        event EventHandler<PeerCapabilityReceivedEventArgs> PeerCapabilityReceived;
+
+        /// <summary>
         ///     Occurs when the currently logged in user is granted membership to a private room.
         /// </summary>
         event EventHandler<string> PrivateRoomMembershipAdded;
@@ -292,6 +297,16 @@ namespace Soulseek
         ///     Gets the client options.
         /// </summary>
         SoulseekClientOptions Options { get; }
+
+        /// <summary>
+        ///     Gets the known slskdN peer capability registry.
+        /// </summary>
+        PeerCapabilityRegistry PeerCapabilities { get; }
+
+        /// <summary>
+        ///     Gets the local slskdN peer capability descriptor advertised in capability acknowledgements.
+        /// </summary>
+        PeerCapabilityDescriptor PeerCapabilityDescriptor { get; }
 
         /// <summary>
         ///     Gets the server port.
@@ -1329,6 +1344,15 @@ namespace Soulseek
         Task SendPeerMessageAsync(string username, int messageCode, byte[] payload, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously sends a slskdN peer capability hello to the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The user to which the capability hello is to be sent.</param>
+        /// <param name="descriptor">The descriptor to send. If omitted, the configured local descriptor is used.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        Task SendPeerCapabilityAsync(string username, PeerCapabilityDescriptor descriptor = null, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Registers a handler for custom peer message codes.
         /// </summary>
         /// <param name="messageCode">The peer message code.</param>
@@ -1346,6 +1370,12 @@ namespace Soulseek
         /// </returns>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="messageCode"/> is less than zero.</exception>
         bool UnregisterPeerMessageHandler(int messageCode);
+
+        /// <summary>
+        ///     Configures the local slskdN peer capability descriptor.
+        /// </summary>
+        /// <param name="descriptor">The descriptor to advertise.</param>
+        void SetPeerCapabilityDescriptor(PeerCapabilityDescriptor descriptor);
 
         /// <summary>
         ///     Asynchronously sends the specified chat room <paramref name="message"/> to the specified <paramref name="roomName"/>.

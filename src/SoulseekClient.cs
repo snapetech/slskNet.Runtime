@@ -168,6 +168,7 @@ namespace Soulseek
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+            PeerMessageHandler.RegisterPeerMessageHandler(PeerCapabilityEnvelope.MessageCode, HandlePeerCapabilityMessageAsync);
             PeerMessageHandler.DownloadFailed += (sender, e) =>
             {
                 // this is also handled in PeerMessageHandler, but the logic in there throws a wait, and we're not guaranteed
@@ -377,6 +378,11 @@ namespace Soulseek
         public event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when a slskdN peer capability descriptor is received.
+        /// </summary>
+        public event EventHandler<PeerCapabilityReceivedEventArgs> PeerCapabilityReceived;
+
+        /// <summary>
         ///     Occurs when the currently logged in user is granted membership to a private room.
         /// </summary>
         public event EventHandler<string> PrivateRoomMembershipAdded;
@@ -556,6 +562,16 @@ namespace Soulseek
         ///     Gets the resolved server address.
         /// </summary>
         public virtual SoulseekClientOptions Options { get; private set; }
+
+        /// <summary>
+        ///     Gets the known slskdN peer capability registry.
+        /// </summary>
+        public PeerCapabilityRegistry PeerCapabilities { get; } = new PeerCapabilityRegistry();
+
+        /// <summary>
+        ///     Gets the local slskdN peer capability descriptor advertised in capability acknowledgements.
+        /// </summary>
+        public PeerCapabilityDescriptor PeerCapabilityDescriptor { get; private set; }
 
         /// <summary>
         ///     Gets server port.
@@ -2631,6 +2647,29 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously sends a slskdN peer capability hello to the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The user to which the capability hello is to be sent.</param>
+        /// <param name="descriptor">The descriptor to send. If omitted, the configured local descriptor is used.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        public Task SendPeerCapabilityAsync(string username, PeerCapabilityDescriptor descriptor = null, CancellationToken? cancellationToken = null)
+        {
+            ValidateUsername(username);
+            EnsureConnectedAndLoggedIn("send a peer capability hello");
+
+            descriptor ??= PeerCapabilityDescriptor;
+
+            if (descriptor == null)
+            {
+                throw new InvalidOperationException("A peer capability descriptor must be supplied or configured before sending a capability hello.");
+            }
+
+            var envelope = new PeerCapabilityEnvelope(PeerCapabilityMessageType.Hello, descriptor);
+            return SendPeerMessageInternalAsync(username, PeerCapabilityEnvelope.MessageCode, envelope.ToByteArray(), cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Registers a handler for custom peer message codes.
         /// </summary>
         /// <param name="messageCode">The peer message code.</param>
@@ -2638,6 +2677,11 @@ namespace Soulseek
         public void RegisterPeerMessageHandler(int messageCode, Func<string, IPEndPoint, byte[], Task> handler)
         {
             ValidatePeerMessageCode(messageCode);
+
+            if (messageCode == PeerCapabilityEnvelope.MessageCode)
+            {
+                throw new ArgumentException("The peer capability message handler is reserved by the runtime.", nameof(messageCode));
+            }
 
             if (handler == null)
             {
@@ -2655,7 +2699,22 @@ namespace Soulseek
         public bool UnregisterPeerMessageHandler(int messageCode)
         {
             ValidatePeerMessageCode(messageCode);
+
+            if (messageCode == PeerCapabilityEnvelope.MessageCode)
+            {
+                throw new ArgumentException("The peer capability message handler is reserved by the runtime.", nameof(messageCode));
+            }
+
             return PeerMessageHandler.UnregisterPeerMessageHandler(messageCode);
+        }
+
+        /// <summary>
+        ///     Configures the local slskdN peer capability descriptor.
+        /// </summary>
+        /// <param name="descriptor">The descriptor to advertise.</param>
+        public void SetPeerCapabilityDescriptor(PeerCapabilityDescriptor descriptor)
+        {
+            PeerCapabilityDescriptor = descriptor ?? throw new ArgumentNullException(nameof(descriptor));
         }
 
         /// <summary>
@@ -4707,6 +4766,23 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new SoulseekClientException($"Failed to send private message to {usernames.Count} users: {ex.Message}", ex);
+            }
+        }
+
+        private async Task HandlePeerCapabilityMessageAsync(string username, IPEndPoint endpoint, byte[] payload)
+        {
+            var envelope = PeerCapabilityEnvelope.FromByteArray(payload);
+            var record = PeerCapabilities.Update(username, endpoint, envelope);
+            PeerCapabilityReceived?.Invoke(this, new PeerCapabilityReceivedEventArgs(record));
+
+            if (envelope.MessageType == PeerCapabilityMessageType.Hello && PeerCapabilityDescriptor != null)
+            {
+                var response = new PeerCapabilityEnvelope(
+                    PeerCapabilityMessageType.Acknowledgement,
+                    PeerCapabilityDescriptor,
+                    envelope.Nonce);
+
+                await SendPeerMessageInternalAsync(username, PeerCapabilityEnvelope.MessageCode, response.ToByteArray(), CancellationToken.None).ConfigureAwait(false);
             }
         }
 
