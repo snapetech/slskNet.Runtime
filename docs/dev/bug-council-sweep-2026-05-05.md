@@ -47,6 +47,14 @@ This sweep fixes the loop flaws that allowed the council to stop after one or tw
 | `src/Messaging/Messages/Peer/FolderContentsResponse.cs:41` | Fixed | RT-060 | Directory collections are copied into immutable snapshots and null directories are rejected. |
 | `src/Messaging/Messages/Server/NetInfoNotification.cs:41` | Fixed | RT-066 | Parent metadata is copied, count-matched, and validated for null endpoints, usernames, and invalid ports. |
 
-Next queued section:
+Remaining candidate classes:
 
-`Protocol count and length allocation candidates`
+| Class | Current hits | Status | Next action |
+| --- | ---: | --- | --- |
+| Protocol scalar emission candidates | 145 | Fixed | Closed by `docs/dev/bug-council-sweep-protocol-scalar-2026-05-05.md`; accepted outbound scalar constructor and builder gaps were fixed. |
+| Resolver output and raw stream candidates | 341 | Fixed | Closed by `docs/dev/bug-council-sweep-resolver-stream-2026-05-05.md`; accepted resolver-output diagnostics were fixed. |
+| Task, cancellation, timer, and semaphore lifecycle candidates | 203 | Fixed | Closed by `docs/dev/bug-council-sweep-lifecycle-2026-05-05.md`; accepted cancellation registration and fire-and-forget async gaps were fixed. |
+| Example Web API path, request, and lifecycle candidates | 390 | Fixed | Closed by `docs/dev/bug-council-sweep-webapi-2026-05-05.md`; accepted shared-path, route-validation, cache-lifecycle, and upload lookup gaps were fixed. |
+| Mutable public byte arrays and array properties | 12 | Mostly fixed | Reclassify residual public array hits after snapshot fixes. |
+| Value equality and hash-code comparisons | 4 | Mostly fixed | Reclassify residual equality operator hits after `WaitKey` and `ConnectionKey` fixes. |
+| Security-sensitive material candidates | 2 | Baseline gated | Confirm scanner self-hits only and keep high-confidence secret scan active. |
