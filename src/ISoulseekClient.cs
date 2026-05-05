@@ -118,11 +118,6 @@ namespace Soulseek
         event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceived;
 
         /// <summary>
-        ///     Occurs when a slskdN peer capability descriptor is received.
-        /// </summary>
-        event EventHandler<PeerCapabilityReceivedEventArgs> PeerCapabilityReceived;
-
-        /// <summary>
         ///     Occurs when the currently logged in user is granted membership to a private room.
         /// </summary>
         event EventHandler<string> PrivateRoomMembershipAdded;
@@ -228,6 +223,11 @@ namespace Soulseek
         event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
         /// <summary>
+        ///     Occurs when a slskdN peer capability descriptor is received.
+        /// </summary>
+        event EventHandler<PeerCapabilityReceivedEventArgs> PeerCapabilityReceived;
+
+        /// <summary>
         ///     Occurs when a search changes state.
         /// </summary>
         event EventHandler<SearchStateChangedEventArgs> SearchStateChanged;
@@ -299,16 +299,6 @@ namespace Soulseek
         SoulseekClientOptions Options { get; }
 
         /// <summary>
-        ///     Gets the known slskdN peer capability registry.
-        /// </summary>
-        PeerCapabilityRegistry PeerCapabilities { get; }
-
-        /// <summary>
-        ///     Gets the local slskdN peer capability descriptor advertised in capability acknowledgements.
-        /// </summary>
-        PeerCapabilityDescriptor PeerCapabilityDescriptor { get; }
-
-        /// <summary>
         ///     Gets the server port.
         /// </summary>
         int? Port { get; }
@@ -317,6 +307,16 @@ namespace Soulseek
         ///     Gets information sent by the server upon login.
         /// </summary>
         ServerInfo ServerInfo { get; }
+
+        /// <summary>
+        ///     Gets the known slskdN peer capability registry.
+        /// </summary>
+        PeerCapabilityRegistry PeerCapabilities { get; }
+
+        /// <summary>
+        ///     Gets the local slskdN peer capability descriptor advertised in capability acknowledgements.
+        /// </summary>
+        PeerCapabilityDescriptor PeerCapabilityDescriptor { get; }
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
@@ -1344,10 +1344,10 @@ namespace Soulseek
         Task SendPeerMessageAsync(string username, int messageCode, byte[] payload, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Asynchronously sends a slskdN peer capability hello to the specified <paramref name="username"/>.
+        ///     Asynchronously sends the local or supplied slskdN peer capability descriptor to the specified <paramref name="username"/>.
         /// </summary>
-        /// <param name="username">The user to which the capability hello is to be sent.</param>
-        /// <param name="descriptor">The descriptor to send. If omitted, the configured local descriptor is used.</param>
+        /// <param name="username">The user to which the capability descriptor is to be sent.</param>
+        /// <param name="descriptor">The descriptor to send, or null to use <see cref="PeerCapabilityDescriptor"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
         Task SendPeerCapabilityAsync(string username, PeerCapabilityDescriptor descriptor = null, CancellationToken? cancellationToken = null);
@@ -1372,7 +1372,7 @@ namespace Soulseek
         bool UnregisterPeerMessageHandler(int messageCode);
 
         /// <summary>
-        ///     Configures the local slskdN peer capability descriptor.
+        ///     Configures the local slskdN peer capability descriptor advertised in capability acknowledgements.
         /// </summary>
         /// <param name="descriptor">The descriptor to advertise.</param>
         void SetPeerCapabilityDescriptor(PeerCapabilityDescriptor descriptor);

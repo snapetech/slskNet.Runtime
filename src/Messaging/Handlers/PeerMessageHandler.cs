@@ -95,21 +95,23 @@ namespace Soulseek.Messaging.Handlers
         public async void HandleMessageRead(object sender, byte[] message)
         {
             var connection = (IMessageConnection)sender;
-            if (message.Length < 8)
-            {
-                throw new MessageReadException("The peer message payload must include a 4-byte code and at least 0-byte body");
-            }
-
-            var codeInt = BitConverter.ToInt32(message, 4);
-            var isKnownCode = Enum.IsDefined(typeof(MessageCode.Peer), codeInt);
-            var code = isKnownCode ? (MessageCode.Peer)codeInt : default;
-            var payload = message.Skip(8).ToArray();
-            var displayCode = isKnownCode ? (int)code : codeInt;
-
-            Diagnostic.Debug($"Peer message received: {displayCode} from {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
+            var displayCode = "unknown";
 
             try
             {
+                if (message.Length < 8)
+                {
+                    throw new MessageReadException("The peer message payload must include a 4-byte code and body length prefix");
+                }
+
+                var codeInt = BitConverter.ToInt32(message, 4);
+                var isKnownCode = Enum.IsDefined(typeof(MessageCode.Peer), codeInt);
+                var code = isKnownCode ? (MessageCode.Peer)codeInt : default;
+                var payload = message.Skip(8).ToArray();
+                displayCode = isKnownCode ? code.ToString() : codeInt.ToString();
+
+                Diagnostic.Debug($"Peer message received: {displayCode} from {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
+
                 if (!isKnownCode && CustomPeerMessageHandlers.TryGetValue(codeInt, out var handler))
                 {
                     await handler(connection, payload).ConfigureAwait(false);
@@ -362,13 +364,13 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     default:
-                        Diagnostic.Debug($"Unhandled peer message: {code} from {connection.Username} ({connection.IPEndPoint}); {message.Length} bytes");
+                        Diagnostic.Debug($"Unhandled peer message: {displayCode} from {connection.Username} ({connection.IPEndPoint}); {message.Length} bytes");
                         break;
                 }
             }
             catch (Exception ex)
             {
-                Diagnostic.Warning($"Error handling peer message: {code} from {connection.Username} ({connection.IPEndPoint}); {ex.Message}", ex);
+                Diagnostic.Warning($"Error handling peer message: {displayCode} from {connection.Username} ({connection.IPEndPoint}); {ex.Message}", ex);
             }
         }
 

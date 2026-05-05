@@ -55,6 +55,12 @@ Security and safety notes:
 - Outbound obfuscated connection preference never disables indirect connection fallback.
 - The runtime requires regular-port advertisement when obfuscation is enabled; callers cannot use this implementation to create an obfuscated-only Soulseek client.
 
+Validation:
+
+- `ObfuscatedConnectionMatrixTests` uses loopback TCP sockets to prove obfuscated peer-message (`P`), distributed-message (`D`), and file-transfer (`F`) runtime paths.
+- The same matrix covers regular peer-message, distributed-message, and transfer fallback so compatibility paths stay under test alongside obfuscated paths.
+- The matrix is runtime-local; it does not replace separate live-network interoperability tests against arbitrary third-party Soulseek clients.
+
 ## Interest and Recommendation APIs
 
 The fork exposes server protocol messages that were defined in Soulseek protocol references but not previously surfaced as client APIs.

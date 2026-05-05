@@ -23,6 +23,10 @@
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);SA1636;SA1641</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <AdditionalFiles Include=".\.CodeAnalysis\stylecop.json" Link="Properties\stylecop.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>

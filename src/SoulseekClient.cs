@@ -378,11 +378,6 @@ namespace Soulseek
         public event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceived;
 
         /// <summary>
-        ///     Occurs when a slskdN peer capability descriptor is received.
-        /// </summary>
-        public event EventHandler<PeerCapabilityReceivedEventArgs> PeerCapabilityReceived;
-
-        /// <summary>
         ///     Occurs when the currently logged in user is granted membership to a private room.
         /// </summary>
         public event EventHandler<string> PrivateRoomMembershipAdded;
@@ -488,6 +483,11 @@ namespace Soulseek
         public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
         /// <summary>
+        ///     Occurs when a slskdN peer capability descriptor is received.
+        /// </summary>
+        public event EventHandler<PeerCapabilityReceivedEventArgs> PeerCapabilityReceived;
+
+        /// <summary>
         ///     Occurs when a search changes state.
         /// </summary>
         public event EventHandler<SearchStateChangedEventArgs> SearchStateChanged;
@@ -564,16 +564,6 @@ namespace Soulseek
         public virtual SoulseekClientOptions Options { get; private set; }
 
         /// <summary>
-        ///     Gets the known slskdN peer capability registry.
-        /// </summary>
-        public PeerCapabilityRegistry PeerCapabilities { get; } = new PeerCapabilityRegistry();
-
-        /// <summary>
-        ///     Gets the local slskdN peer capability descriptor advertised in capability acknowledgements.
-        /// </summary>
-        public PeerCapabilityDescriptor PeerCapabilityDescriptor { get; private set; }
-
-        /// <summary>
         ///     Gets server port.
         /// </summary>
         public int? Port => IPEndPoint?.Port;
@@ -582,6 +572,16 @@ namespace Soulseek
         ///     Gets information sent by the server upon login.
         /// </summary>
         public ServerInfo ServerInfo { get; private set; } = new ServerInfo(parentMinSpeed: null, parentSpeedRatio: null, wishlistInterval: null, isSupporter: null);
+
+        /// <summary>
+        ///     Gets the known slskdN peer capability registry.
+        /// </summary>
+        public PeerCapabilityRegistry PeerCapabilities { get; } = new PeerCapabilityRegistry();
+
+        /// <summary>
+        ///     Gets the local slskdN peer capability descriptor advertised in capability acknowledgements.
+        /// </summary>
+        public PeerCapabilityDescriptor PeerCapabilityDescriptor { get; private set; }
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
@@ -2647,10 +2647,10 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously sends a slskdN peer capability hello to the specified <paramref name="username"/>.
+        ///     Asynchronously sends the local or supplied slskdN peer capability descriptor to the specified <paramref name="username"/>.
         /// </summary>
-        /// <param name="username">The user to which the capability hello is to be sent.</param>
-        /// <param name="descriptor">The descriptor to send. If omitted, the configured local descriptor is used.</param>
+        /// <param name="username">The user to which the capability descriptor is to be sent.</param>
+        /// <param name="descriptor">The descriptor to send, or null to use <see cref="PeerCapabilityDescriptor"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
         public Task SendPeerCapabilityAsync(string username, PeerCapabilityDescriptor descriptor = null, CancellationToken? cancellationToken = null)
@@ -2662,7 +2662,7 @@ namespace Soulseek
 
             if (descriptor == null)
             {
-                throw new InvalidOperationException("A peer capability descriptor must be supplied or configured before sending a capability hello.");
+                throw new InvalidOperationException("A peer capability descriptor must be supplied or configured before it can be sent.");
             }
 
             var envelope = new PeerCapabilityEnvelope(PeerCapabilityMessageType.Hello, descriptor);
@@ -2709,7 +2709,7 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Configures the local slskdN peer capability descriptor.
+        ///     Configures the local slskdN peer capability descriptor advertised in capability acknowledgements.
         /// </summary>
         /// <param name="descriptor">The descriptor to advertise.</param>
         public void SetPeerCapabilityDescriptor(PeerCapabilityDescriptor descriptor)
@@ -4769,23 +4769,6 @@ namespace Soulseek
             }
         }
 
-        private async Task HandlePeerCapabilityMessageAsync(string username, IPEndPoint endpoint, byte[] payload)
-        {
-            var envelope = PeerCapabilityEnvelope.FromByteArray(payload);
-            var record = PeerCapabilities.Update(username, endpoint, envelope);
-            PeerCapabilityReceived?.Invoke(this, new PeerCapabilityReceivedEventArgs(record));
-
-            if (envelope.MessageType == PeerCapabilityMessageType.Hello && PeerCapabilityDescriptor != null)
-            {
-                var response = new PeerCapabilityEnvelope(
-                    PeerCapabilityMessageType.Acknowledgement,
-                    PeerCapabilityDescriptor,
-                    envelope.Nonce);
-
-                await SendPeerMessageInternalAsync(username, PeerCapabilityEnvelope.MessageCode, response.ToByteArray(), CancellationToken.None).ConfigureAwait(false);
-            }
-        }
-
         private async Task SendPeerMessageInternalAsync(string username, int messageCode, byte[] payload, CancellationToken cancellationToken)
         {
             payload ??= Array.Empty<byte>();
@@ -4805,6 +4788,23 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new SoulseekClientException($"Failed to send peer message to user {username}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task HandlePeerCapabilityMessageAsync(string username, IPEndPoint endpoint, byte[] payload)
+        {
+            var envelope = PeerCapabilityEnvelope.FromByteArray(payload);
+            var record = PeerCapabilities.Update(username, endpoint, envelope);
+            PeerCapabilityReceived?.Invoke(this, new PeerCapabilityReceivedEventArgs(record));
+
+            if (envelope.MessageType == PeerCapabilityMessageType.Hello && PeerCapabilityDescriptor != null)
+            {
+                var response = new PeerCapabilityEnvelope(
+                    PeerCapabilityMessageType.Acknowledgement,
+                    PeerCapabilityDescriptor,
+                    envelope.Nonce);
+
+                await SendPeerMessageInternalAsync(username, PeerCapabilityEnvelope.MessageCode, response.ToByteArray(), CancellationToken.None).ConfigureAwait(false);
             }
         }
 

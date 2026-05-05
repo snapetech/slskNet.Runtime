@@ -213,7 +213,7 @@ namespace Soulseek
         {
             if (response.Token != Token)
             {
-                throw new DataMisalignedException($"Search for '{Query}' with token {Token} received response with search token {response.Token}");
+                return;
             }
 
             if (Disposed)

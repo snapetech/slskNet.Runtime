@@ -68,6 +68,13 @@ Operational notes:
 - `preferOutbound` changes connection ordering only for peers that advertised compatible type-1 metadata.
 - Obfuscation applies to peer-message (`P`), distributed-message (`D`), and file-transfer (`F`) streams. Regular paths remain available for fallback.
 
+Validation notes:
+
+- Local loopback matrix tests exercise obfuscated and regular peer-message (`P`) roundtrips.
+- Local loopback matrix tests exercise obfuscated and regular distributed-message (`D`) roundtrips.
+- Local loopback matrix tests exercise obfuscated file-transfer (`F`) byte and stream payloads plus regular transfer fallback.
+- These tests prove runtime framing and fallback behavior over real local TCP sockets; live third-party client interoperability still needs live-network validation.
+
 ### Interests and recommendations
 
 The runtime exposes the server-side interest and recommendation messages used by Soulseek clients:
