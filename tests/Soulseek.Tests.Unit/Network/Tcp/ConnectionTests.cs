@@ -1954,6 +1954,30 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Read")]
+        [Theory(DisplayName = "Read throws given excessive buffered length"), AutoData]
+        public async Task Read_Throws_Given_Excessive_Buffered_Length(IPEndPoint endpoint)
+        {
+            var s = new Mock<INetworkStream>();
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.GetStream())
+                .Returns(s.Object);
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(() => c.ReadAsync(Connection.MaximumBufferedReadLength + 1));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<ArgumentOutOfRangeException>(ex);
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
         [Theory(DisplayName = "Read throws given zero or negative length")]
         [InlineData(-12151353)]
         [InlineData(-1)]

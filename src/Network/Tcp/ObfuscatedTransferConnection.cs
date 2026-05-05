@@ -129,6 +129,11 @@ namespace Soulseek.Network.Tcp
                 throw new ArgumentOutOfRangeException(nameof(length), $"The requested length must be less than or equal to {int.MaxValue}");
             }
 
+            if (length > Connection.MaximumBufferedReadLength)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length), $"Buffered reads are limited to {Connection.MaximumBufferedReadLength} bytes; use the stream overload for larger transfers");
+            }
+
             var output = new byte[checked((int)length)];
             var offset = 0;
 

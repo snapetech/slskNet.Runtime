@@ -142,6 +142,16 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Fact]
+        public async Task Obfuscated_Transfer_Buffered_Read_Rejects_Excessive_Length()
+        {
+            using (var pair = await ConnectedTcpPair.CreateAsync())
+            using (var receiver = new ConnectionFactory().GetObfuscatedTransferConnection(pair.ServerEndPoint, tcpClient: pair.Server))
+            {
+                await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => receiver.ReadAsync(Connection.MaximumBufferedReadLength + 1, CancellationToken.None));
+            }
+        }
+
+        [Fact]
         public async Task Obfuscated_Transfer_Read_Rejects_Zero_Length_Frame()
         {
             var frame = RotatedObfuscation.Encode(BitConverter.GetBytes(0), 0x1020_3040);

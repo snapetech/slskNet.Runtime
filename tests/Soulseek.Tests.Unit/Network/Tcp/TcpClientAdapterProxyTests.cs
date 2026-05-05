@@ -62,6 +62,62 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             }
         }
 
+        [Fact(DisplayName = "Proxy connect rejects short connection response")]
+        public async Task Proxy_Connect_Rejects_Short_Connection_Response()
+        {
+            using (var listener = new TcpListenerFixture(stream => WriteProxyResponseAsync(stream, new byte[] { 0x05, 0x00, 0x00 })))
+            using (var client = new TcpClientAdapter())
+            {
+                await Assert.ThrowsAsync<ProxyException>(() => client.ConnectThroughProxyAsync(
+                    listener.EndPoint.Address,
+                    listener.EndPoint.Port,
+                    IPAddress.Loopback,
+                    80));
+            }
+        }
+
+        [Fact(DisplayName = "Proxy connect rejects short bound domain response")]
+        public async Task Proxy_Connect_Rejects_Short_Bound_Domain_Response()
+        {
+            using (var listener = new TcpListenerFixture(stream => WriteProxyResponseAsync(stream, new byte[] { 0x05, 0x00, 0x00, 0x03, 0x05, 0x61, 0x62 })))
+            using (var client = new TcpClientAdapter())
+            {
+                await Assert.ThrowsAsync<ProxyException>(() => client.ConnectThroughProxyAsync(
+                    listener.EndPoint.Address,
+                    listener.EndPoint.Port,
+                    IPAddress.Loopback,
+                    80));
+            }
+        }
+
+        [Fact(DisplayName = "Proxy connect rejects short bound IPv6 response")]
+        public async Task Proxy_Connect_Rejects_Short_Bound_Ipv6_Response()
+        {
+            using (var listener = new TcpListenerFixture(stream => WriteProxyResponseAsync(stream, new byte[] { 0x05, 0x00, 0x00, 0x04, 0x20, 0x01, 0x0d, 0xb8 })))
+            using (var client = new TcpClientAdapter())
+            {
+                await Assert.ThrowsAsync<ProxyException>(() => client.ConnectThroughProxyAsync(
+                    listener.EndPoint.Address,
+                    listener.EndPoint.Port,
+                    IPAddress.Loopback,
+                    80));
+            }
+        }
+
+        [Fact(DisplayName = "Proxy connect rejects short bound port response")]
+        public async Task Proxy_Connect_Rejects_Short_Bound_Port_Response()
+        {
+            using (var listener = new TcpListenerFixture(stream => WriteProxyResponseAsync(stream, new byte[] { 0x05, 0x00, 0x00, 0x01, 127, 0, 0, 1, 0x1f })))
+            using (var client = new TcpClientAdapter())
+            {
+                await Assert.ThrowsAsync<ProxyException>(() => client.ConnectThroughProxyAsync(
+                    listener.EndPoint.Address,
+                    listener.EndPoint.Port,
+                    IPAddress.Loopback,
+                    80));
+            }
+        }
+
         private static async Task WaitForClientDisconnectAsync(NetworkStream stream)
         {
             var buffer = new byte[1];
@@ -77,6 +133,15 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             {
                 // The test server only needs to observe disconnect; socket shutdown races are acceptable here.
             }
+        }
+
+        private static async Task WriteProxyResponseAsync(NetworkStream stream, byte[] response)
+        {
+            var buffer = new byte[1024];
+            await stream.ReadAsync(buffer, 0, 3).ConfigureAwait(false);
+            await stream.WriteAsync(new byte[] { 0x05, 0x00 }, 0, 2).ConfigureAwait(false);
+            await stream.ReadAsync(buffer, 0, 10).ConfigureAwait(false);
+            await stream.WriteAsync(response, 0, response.Length).ConfigureAwait(false);
         }
 
         private sealed class TcpListenerFixture : IDisposable

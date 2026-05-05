@@ -120,6 +120,10 @@ The overload validates all recipients before writing the packet. Null, empty, an
 
 `CannotCreateRoom` server responses now complete the pending join-room wait with a `RoomException`. This makes failed room creation/join attempts visible to callers instead of requiring applications to infer failure from timeout behavior.
 
+### Authentication hash
+
+Soulseek login requests include the protocol-required MD5 hash of `username + password`. The runtime emits that field for wire compatibility only; it is not used as password storage, password verification, or a general-purpose security primitive.
+
 ## License
 
 This software is licensed under the GNU General Public License v3.0 with Additional Terms pursuant to Section 7 of the GPLv3. The complete license text is in [LICENSE](LICENSE), and the required notices are in [NOTICE](NOTICE).

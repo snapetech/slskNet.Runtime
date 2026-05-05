@@ -110,6 +110,43 @@ namespace Soulseek.Tests.Unit.Messaging
             Assert.Equal(4, reader.Position);
         }
 
+        [Trait("Category", "Remaining")]
+        [Fact(DisplayName = "HasRemainingBytes returns expected values")]
+        public void HasRemainingBytes_Returns_Expected_Values()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.BrowseRequest)
+                .WriteInteger(1)
+                .Build();
+
+            var reader = new MessageReader<MessageCode.Peer>(msg);
+
+            Assert.True(reader.HasRemainingBytes(0));
+            Assert.True(reader.HasRemainingBytes(4));
+            Assert.False(reader.HasRemainingBytes(5));
+
+            reader.ReadInteger();
+
+            Assert.True(reader.HasRemainingBytes(0));
+            Assert.False(reader.HasRemainingBytes(1));
+        }
+
+        [Trait("Category", "Remaining")]
+        [Fact(DisplayName = "HasRemainingBytes throws given negative count")]
+        public void HasRemainingBytes_Throws_Given_Negative_Count()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.BrowseRequest)
+                .Build();
+
+            var reader = new MessageReader<MessageCode.Peer>(msg);
+
+            var ex = Record.Exception(() => reader.HasRemainingBytes(-1));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
         [Trait("Category", "Seek")]
         [Fact(DisplayName = "Seek changes position")]
         public void Seek_Changes_Position()

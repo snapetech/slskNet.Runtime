@@ -124,6 +124,8 @@ namespace Soulseek.Messaging
         /// <returns>The read byte.</returns>
         public int ReadByte()
         {
+            EnsureRemaining(1, "byte");
+
             try
             {
                 var retVal = Payload.Span[Position];
@@ -170,11 +172,28 @@ namespace Soulseek.Messaging
         }
 
         /// <summary>
+        ///     Gets a value indicating whether at least <paramref name="count"/> unread bytes remain in the payload.
+        /// </summary>
+        /// <param name="count">The number of bytes to check.</param>
+        /// <returns>A value indicating whether at least <paramref name="count"/> unread bytes remain.</returns>
+        public bool HasRemainingBytes(int count)
+        {
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), "Byte count must be greater than or equal to zero");
+            }
+
+            return count <= Remaining;
+        }
+
+        /// <summary>
         ///     Reads an integer at the head of the reader.
         /// </summary>
         /// <returns>The read integer.</returns>
         public int ReadInteger()
         {
+            EnsureRemaining(4, "integer (4 bytes)");
+
             try
             {
                 var retVal = Payload.Span[Position] | (Payload.Span[Position + 1] << 8) | (Payload.Span[Position + 2] << 16) | (Payload.Span[Position + 3] << 24);
@@ -193,6 +212,8 @@ namespace Soulseek.Messaging
         /// <returns>The read long.</returns>
         public long ReadLong()
         {
+            EnsureRemaining(8, "long integer (8 bytes)");
+
             try
             {
                 var retVal = BitConverter.ToInt64(Payload.Slice(Position, 8).ToArray(), 0);
@@ -312,6 +333,14 @@ namespace Soulseek.Messaging
             catch (Exception ex)
             {
                 throw new MessageCompressionException("Failed to decompress the message payload", ex);
+            }
+        }
+
+        private void EnsureRemaining(int count, string readName)
+        {
+            if (!HasRemainingBytes(count))
+            {
+                throw new MessageReadException($"Failed to read a {readName} from position {Position} of the message; {Remaining} bytes remain");
             }
         }
 

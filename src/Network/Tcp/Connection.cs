@@ -37,6 +37,11 @@ namespace Soulseek.Network.Tcp
     internal class Connection : IConnection
     {
         /// <summary>
+        ///     The maximum number of bytes that may be read into a single byte array.
+        /// </summary>
+        internal const long MaximumBufferedReadLength = 64 * 1024 * 1024;
+
+        /// <summary>
         ///     Initializes a new instance of the <see cref="Connection"/> class.
         /// </summary>
         /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
@@ -177,11 +182,6 @@ namespace Soulseek.Network.Tcp
         public ConnectionTypes Type { get; set; }
 
         /// <summary>
-        ///     Marks this connection as using type-1 obfuscation.
-        /// </summary>
-        public void MarkObfuscated() => Obfuscated = true;
-
-        /// <summary>
         ///     Gets the current depth of the double buffered write queue.
         /// </summary>
         public int WriteQueueDepth => Options.WriteQueueSize - WriteQueueSemaphore.CurrentCount;
@@ -220,6 +220,11 @@ namespace Soulseek.Network.Tcp
         private SemaphoreSlim WriteSemaphore { get; set; } = new SemaphoreSlim(initialCount: 1, maxCount: 1);
         private SemaphoreSlim WriteQueueSemaphore { get; set; }
         private bool WriteQueueFull { get; set; }
+
+        /// <summary>
+        ///     Marks this connection as using type-1 obfuscation.
+        /// </summary>
+        public void MarkObfuscated() => Obfuscated = true;
 
         /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPEndPoint"/>.
@@ -395,6 +400,11 @@ namespace Soulseek.Network.Tcp
             if (length < 0)
             {
                 throw new ArgumentException("The requested length must be greater than or equal to zero", nameof(length));
+            }
+
+            if (length > MaximumBufferedReadLength)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length), $"Buffered reads are limited to {MaximumBufferedReadLength} bytes; use the stream overload for larger transfers");
             }
 
             if (!TcpClient.Connected)
