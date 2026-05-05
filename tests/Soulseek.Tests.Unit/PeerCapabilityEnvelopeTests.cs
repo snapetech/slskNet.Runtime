@@ -50,6 +50,12 @@ namespace Soulseek.Tests.Unit
             Assert.Throws<MessageException>(() => PeerCapabilityEnvelope.FromByteArray(bytes));
         }
 
+        [Fact(DisplayName = "Capability envelope rejects truncated header")]
+        public void Capability_Envelope_Rejects_Truncated_Header()
+        {
+            Assert.Throws<MessageException>(() => PeerCapabilityEnvelope.FromByteArray(new byte[] { 1, 2, 3 }));
+        }
+
         [Fact(DisplayName = "Capability envelope rejects truncated declared byte arrays")]
         public void Capability_Envelope_Rejects_Truncated_Declared_Byte_Arrays()
         {

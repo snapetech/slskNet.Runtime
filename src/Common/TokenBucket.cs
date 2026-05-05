@@ -101,6 +101,11 @@ namespace Soulseek
         /// <returns>A Task that completes when tokens have been provided.</returns>
         public Task<int> GetAsync(int count, CancellationToken cancellationToken = default)
         {
+            if (count < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), "Token count must be greater than or equal to 1");
+            }
+
             return GetInternalAsync(Math.Min(count, (int)Math.Min(int.MaxValue, Capacity)), cancellationToken);
         }
 
