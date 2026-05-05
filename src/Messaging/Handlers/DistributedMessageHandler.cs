@@ -24,6 +24,7 @@
 namespace Soulseek.Messaging.Handlers
 {
     using System;
+    using System.Security.Cryptography;
     using Soulseek.Diagnostics;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
@@ -146,7 +147,12 @@ namespace Soulseek.Messaging.Handlers
             }
             else if (SoulseekClient.Options.DeduplicateSearchRequests)
             {
-                var current = Convert.ToBase64String(message);
+                string current;
+
+                using (var sha256 = SHA256.Create())
+                {
+                    current = Convert.ToBase64String(sha256.ComputeHash(message));
+                }
 
                 if (DeduplicationHash == current)
                 {
