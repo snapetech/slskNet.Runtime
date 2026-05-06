@@ -1,5 +1,4 @@
-// <copyright file="ProtocolRoundtripFuzz.cs" company="JP Dillingham">
-//     Copyright (c) JP Dillingham.
+// <copyright file="ProtocolRoundtripFuzz.cs" company="slskdN Team">
 //     Copyright (c) slskdN Team.
 //     SPDX-License-Identifier: GPL-3.0-only
 // </copyright>
@@ -7,6 +6,7 @@
 namespace Soulseek.Tests.Unit.Messaging.Fuzz
 {
     using System;
+    using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Xunit;
 
@@ -27,7 +27,7 @@ namespace Soulseek.Tests.Unit.Messaging.Fuzz
         [Fact]
         public void DistributedBranchLevel_Roundtrips_Valid_Values()
         {
-            var rng = new Random(0xC0DE_BABE);
+            var rng = new Random(unchecked((int)0xC0DE_BABE));
 
             for (var i = 0; i < Iterations; i++)
             {
@@ -43,7 +43,7 @@ namespace Soulseek.Tests.Unit.Messaging.Fuzz
         [Fact]
         public void DistributedChildDepth_Roundtrips_Valid_Values()
         {
-            var rng = new Random(0xDEAD_BEEF);
+            var rng = new Random(unchecked((int)0xDEAD_BEEF));
 
             for (var i = 0; i < Iterations; i++)
             {
