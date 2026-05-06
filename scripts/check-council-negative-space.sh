@@ -143,12 +143,20 @@ assert_validator_present \
   "CSL0001"
 assert_baseline_anchor "csl0001-taint-to-allocation" "CSL0001"
 
+# Mythos-level analyzer (CSL0002) - loop-count DoS lens.
+assert_validator_present \
+  "csl0002-taint-to-loop-bound" \
+  "analyzers/Soulseek.CouncilAnalyzers/TaintToLoopBoundAnalyzer.cs" \
+  "CSL0002"
+assert_baseline_anchor "csl0002-taint-to-loop-bound" "CSL0002"
+
 # Protocol fuzz harness — same logic; absence silently disables coverage.
 assert_validator_present \
   "protocol-fuzz-harness" \
   "tests/Soulseek.Tests.Unit/Messaging/Fuzz/ProtocolAdversarialFuzz.cs" \
   "IsDocumentedFailure"
 assert_baseline_anchor "protocol-fuzz-harness" "IsDocumentedFailure"
+assert_baseline_anchor "protocol-fuzz-harness" "KnownCorpus"
 
 if [[ "$failures" -gt 0 ]]; then
   printf '\n%d negative-space gate check(s) failed.\n' "$failures" >&2
