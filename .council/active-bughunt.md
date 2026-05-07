@@ -9,15 +9,15 @@ Classification rule: any accepted row must be ledgered, fixed with behavior
 coverage, sibling-swept, and promoted into a durable gate before closure.
 
 ## Event-style async boundaries
+src/Network/PeerConnectionManager.cs:789:        public async void RemoveAndDisposeAll()
 src/Network/DistributedConnectionManager.cs:700:        public async void RemoveAndDisposeAll()
 src/Network/DistributedConnectionManager.cs:1194:        private async void ParentConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
 src/Network/DistributedConnectionManager.cs:1276:        private async void StatusDebounceTimer_Elapsed(object sender, ElapsedEventArgs e)
 src/Network/ListenerHandler.cs:68:        public async void HandleConnection(object sender, IConnection connection)
-src/Network/PeerConnectionManager.cs:789:        public async void RemoveAndDisposeAll()
+src/Messaging/Handlers/ServerMessageHandler.cs:205:        public async void HandleMessageRead(object sender, byte[] message)
 src/Messaging/Handlers/DistributedMessageHandler.cs:78:        public async void HandleChildMessageRead(object sender, byte[] message)
 src/Messaging/Handlers/DistributedMessageHandler.cs:144:        public async void HandleMessageRead(object sender, byte[] message)
 src/Messaging/Handlers/DistributedMessageHandler.cs:280:        public async void HandleEmbeddedMessage(byte[] message)
-src/Messaging/Handlers/ServerMessageHandler.cs:205:        public async void HandleMessageRead(object sender, byte[] message)
 src/Messaging/Handlers/PeerMessageHandler.cs:92:        public async void HandleMessageRead(object sender, byte[] message)
 
 ## Silent catch or lossy exception boundaries
@@ -30,6 +30,18 @@ src/Network/ListenerHandler.cs:259:                }
 
 ## Callback/event invocation boundaries
 examples/Web/api/SharedFileCache.cs:65:                Refreshed?.Invoke(this, (directoryCount, Files.Count));
+src/SearchResponder.cs:50:                new DiagnosticFactory(SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+src/SearchResponder.cs:301:                () => RequestReceived?.Invoke(this, new SearchRequestEventArgs(username, token, query)));
+src/SearchResponder.cs:306:                () => ResponseDelivered?.Invoke(this, new SearchRequestResponseEventArgs(username, token, query, searchResponse)));
+src/SearchResponder.cs:311:                () => ResponseDeliveryFailed?.Invoke(this, new SearchRequestResponseEventArgs(username, token, query, searchResponse)));
+src/SearchInternal.cs:245:                        if (!(Options.ResponseFilter?.Invoke(response) ?? true))
+src/SearchInternal.cs:251:                        var filteredFiles = response.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
+src/SearchInternal.cs:252:                        var filteredLockedFiles = response.LockedFiles.Where(f => Options.FileFilter?.Invoke(f) ?? true);
+src/SearchInternal.cs:267:                    ResponseReceived?.Invoke(response);
+src/Options/TransferOptions.cs:176:                    stateChanged?.Invoke(args);
+src/Options/TransferOptions.cs:177:                    StateChanged?.Invoke(args);
+src/PeerCapabilityRegistry.cs:117:                Updated?.Invoke(this, new PeerCapabilityReceivedEventArgs(record));
+src/PeerCapabilityRegistry.cs:121:                eventExceptionHandler?.Invoke(nameof(Updated), ex);
 src/SoulseekClient.cs:167:            SearchResponder.RequestReceived += (sender, e) => RaiseEventHandler(nameof(SearchRequestReceived), () => SearchRequestReceived?.Invoke(this, e));
 src/SoulseekClient.cs:168:            SearchResponder.ResponseDelivered += (sender, e) => RaiseEventHandler(nameof(SearchResponseDelivered), () => SearchResponseDelivered?.Invoke(this, e));
 src/SoulseekClient.cs:169:            SearchResponder.ResponseDeliveryFailed += (sender, e) => RaiseEventHandler(nameof(SearchResponseDeliveryFailed), () => SearchResponseDeliveryFailed?.Invoke(this, e));
@@ -91,20 +103,34 @@ src/SoulseekClient.cs:5527:                            options.SlotReleased?.Inv
 src/WishlistSearchScheduler.cs:225:                    options: options.SearchOptionsFactory?.Invoke(term),
 src/WishlistSearchScheduler.cs:230:                SearchCompleted?.Invoke(this, new WishlistSearchCompletedEventArgs(term, null, Array.Empty<SearchResponse>(), ex));
 src/WishlistSearchScheduler.cs:234:            SearchCompleted?.Invoke(this, new WishlistSearchCompletedEventArgs(term, result.Search, result.Responses, null));
-src/PeerCapabilityRegistry.cs:117:                Updated?.Invoke(this, new PeerCapabilityReceivedEventArgs(record));
-src/PeerCapabilityRegistry.cs:121:                eventExceptionHandler?.Invoke(nameof(Updated), ex);
-src/SearchResponder.cs:50:                new DiagnosticFactory(SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
-src/SearchResponder.cs:301:                () => RequestReceived?.Invoke(this, new SearchRequestEventArgs(username, token, query)));
-src/SearchResponder.cs:306:                () => ResponseDelivered?.Invoke(this, new SearchRequestResponseEventArgs(username, token, query, searchResponse)));
-src/SearchResponder.cs:311:                () => ResponseDeliveryFailed?.Invoke(this, new SearchRequestResponseEventArgs(username, token, query, searchResponse)));
-src/SearchInternal.cs:245:                        if (!(Options.ResponseFilter?.Invoke(response) ?? true))
-src/SearchInternal.cs:251:                        var filteredFiles = response.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
-src/SearchInternal.cs:252:                        var filteredLockedFiles = response.LockedFiles.Where(f => Options.FileFilter?.Invoke(f) ?? true);
-src/SearchInternal.cs:267:                    ResponseReceived?.Invoke(response);
-src/Options/TransferOptions.cs:176:                    stateChanged?.Invoke(args);
-src/Options/TransferOptions.cs:177:                    StateChanged?.Invoke(args);
+src/Network/PeerConnectionManager.cs:63:                new DiagnosticFactory(SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+src/Network/ListenerHandler.cs:52:                new DiagnosticFactory(SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+src/Network/DistributedConnectionManager.cs:922:            => RaiseEvent(nameof(ChildAdded), () => ChildAdded?.Invoke(this, new DistributedChildEventArgs(connection.Username, connection.IPEndPoint)));
+src/Network/DistributedConnectionManager.cs:925:            => RaiseEvent(nameof(ChildDisconnected), () => ChildDisconnected?.Invoke(this, new DistributedChildEventArgs(connection.Username, connection.IPEndPoint)));
+src/Network/DistributedConnectionManager.cs:928:            => RaiseEvent(nameof(DemotedFromBranchRoot), () => DemotedFromBranchRoot?.Invoke(this, EventArgs.Empty));
+src/Network/DistributedConnectionManager.cs:934:                DiagnosticGenerated?.Invoke(this, e);
+src/Network/DistributedConnectionManager.cs:955:            => RaiseEvent(nameof(ParentAdopted), () => ParentAdopted?.Invoke(this, new DistributedParentEventArgs(connection.Username, connection.IPEndPoint, ParentBranchLevel, ParentBranchRoot)));
+src/Network/DistributedConnectionManager.cs:958:            => RaiseEvent(nameof(ParentDisconnected), () => ParentDisconnected?.Invoke(this, new DistributedParentEventArgs(connection.Username, connection.IPEndPoint, ParentBranchLevel, ParentBranchRoot)));
+src/Network/DistributedConnectionManager.cs:961:            => RaiseEvent(nameof(PromotedToBranchRoot), () => PromotedToBranchRoot?.Invoke(this, EventArgs.Empty));
+src/Network/DistributedConnectionManager.cs:964:            => RaiseEvent(nameof(StateChanged), () => StateChanged?.Invoke(this, DistributedNetworkInfo.FromDistributedConnectionManager(this)));
+src/Network/MessageConnection.cs:296:                        .Invoke(this, new MessageDataEventArgs(codeBytes, currentLength, totalLength)));
+src/Network/MessageConnection.cs:302:                    .Invoke(this, new MessageDataEventArgs(codeBytes, currentLength, totalLength)));
+src/Network/MessageConnection.cs:313:                        .Invoke(this, new MessageEventArgs(message)));
+src/Network/MessageConnection.cs:319:                    .Invoke(this, new MessageEventArgs(message)));
+src/Network/MessageConnection.cs:325:                .Invoke(this, new MessageReceivedEventArgs(length, code)));
+src/Network/MessageConnection.cs:334:                        .Invoke(this, new MessageEventArgs(message)));
+src/Network/MessageConnection.cs:340:                    .Invoke(this, new MessageEventArgs(message)));
 src/Network/Tcp/ObfuscatedTransferConnection.cs:202:                reporter?.Invoke(bytesAvailable, bytesGranted, buffer.Length);
 src/Network/Tcp/ObfuscatedTransferConnection.cs:267:                reporter?.Invoke(bytesToRead, bytesGranted, bytesRead);
+src/Network/Tcp/Connection.cs:691:                    reporter?.Invoke(bytesToRead, bytesGranted, bytesRead);
+src/Network/Tcp/Connection.cs:830:                    reporter?.Invoke(bytesToRead, bytesGranted, bytesRead);
+src/Network/Tcp/Connection.cs:891:                .Invoke(this, EventArgs.Empty));
+src/Network/Tcp/Connection.cs:900:                        .Invoke(this, new ConnectionDataEventArgs(currentLength, totalLength)));
+src/Network/Tcp/Connection.cs:906:                    .Invoke(this, new ConnectionDataEventArgs(currentLength, totalLength)));
+src/Network/Tcp/Connection.cs:917:                        .Invoke(this, new ConnectionDataEventArgs(currentLength, totalLength)));
+src/Network/Tcp/Connection.cs:923:                    .Invoke(this, new ConnectionDataEventArgs(currentLength, totalLength)));
+src/Network/Tcp/Connection.cs:929:                .Invoke(this, new ConnectionDisconnectedEventArgs(message, exception)));
+src/Network/Tcp/Connection.cs:933:                .Invoke(this, eventArgs));
 src/Network/Tcp/Listener.cs:151:                    Accepted?.Invoke(this, eventArgs);
 src/Messaging/Handlers/ServerMessageHandler.cs:222:                        RaiseEventHandler(nameof(ServerInfoReceived), () => ServerInfoReceived?.Invoke(this, new ServerInfo(parentMinSpeed: parentMinSpeed)));
 src/Messaging/Handlers/ServerMessageHandler.cs:227:                        RaiseEventHandler(nameof(ServerInfoReceived), () => ServerInfoReceived?.Invoke(this, new ServerInfo(parentSpeedRatio: parentSpeedRatio)));
@@ -136,36 +162,10 @@ src/Messaging/Handlers/ServerMessageHandler.cs:551:                        Raise
 src/Messaging/Handlers/ServerMessageHandler.cs:556:                        RaiseEventHandler(nameof(RoomTickerRemoved), () => RoomTickerRemoved?.Invoke(this, new RoomTickerRemovedEventArgs(roomTickerRemoved.RoomName, roomTickerRemoved.Username)));
 src/Messaging/Handlers/ServerMessageHandler.cs:580:                        RaiseEventHandler(nameof(KickedFromServer), () => KickedFromServer?.Invoke(this, EventArgs.Empty));
 src/Messaging/Handlers/ServerMessageHandler.cs:640:                DiagnosticGenerated?.Invoke(this, e);
-src/Network/Tcp/Connection.cs:691:                    reporter?.Invoke(bytesToRead, bytesGranted, bytesRead);
-src/Network/Tcp/Connection.cs:830:                    reporter?.Invoke(bytesToRead, bytesGranted, bytesRead);
-src/Network/Tcp/Connection.cs:891:                .Invoke(this, EventArgs.Empty));
-src/Network/Tcp/Connection.cs:900:                        .Invoke(this, new ConnectionDataEventArgs(currentLength, totalLength)));
-src/Network/Tcp/Connection.cs:906:                    .Invoke(this, new ConnectionDataEventArgs(currentLength, totalLength)));
-src/Network/Tcp/Connection.cs:917:                        .Invoke(this, new ConnectionDataEventArgs(currentLength, totalLength)));
-src/Network/Tcp/Connection.cs:923:                    .Invoke(this, new ConnectionDataEventArgs(currentLength, totalLength)));
-src/Network/Tcp/Connection.cs:929:                .Invoke(this, new ConnectionDisconnectedEventArgs(message, exception)));
-src/Network/Tcp/Connection.cs:933:                .Invoke(this, eventArgs));
+src/Messaging/Handlers/DistributedMessageHandler.cs:51:                new DiagnosticFactory(SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 src/Messaging/Handlers/PeerMessageHandler.cs:54:                new DiagnosticFactory(SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 src/Messaging/Handlers/PeerMessageHandler.cs:343:                        DownloadDenied?.Invoke(this, new DownloadDeniedEventArgs(connection.Username, uploadDeniedResponse.Filename, uploadDeniedResponse.Message));
 src/Messaging/Handlers/PeerMessageHandler.cs:364:                        DownloadFailed?.Invoke(this, new DownloadFailedEventArgs(connection.Username, uploadFailedResponse.Filename));
-src/Network/DistributedConnectionManager.cs:922:            => RaiseEvent(nameof(ChildAdded), () => ChildAdded?.Invoke(this, new DistributedChildEventArgs(connection.Username, connection.IPEndPoint)));
-src/Network/DistributedConnectionManager.cs:925:            => RaiseEvent(nameof(ChildDisconnected), () => ChildDisconnected?.Invoke(this, new DistributedChildEventArgs(connection.Username, connection.IPEndPoint)));
-src/Network/DistributedConnectionManager.cs:928:            => RaiseEvent(nameof(DemotedFromBranchRoot), () => DemotedFromBranchRoot?.Invoke(this, EventArgs.Empty));
-src/Network/DistributedConnectionManager.cs:934:                DiagnosticGenerated?.Invoke(this, e);
-src/Network/DistributedConnectionManager.cs:955:            => RaiseEvent(nameof(ParentAdopted), () => ParentAdopted?.Invoke(this, new DistributedParentEventArgs(connection.Username, connection.IPEndPoint, ParentBranchLevel, ParentBranchRoot)));
-src/Network/DistributedConnectionManager.cs:958:            => RaiseEvent(nameof(ParentDisconnected), () => ParentDisconnected?.Invoke(this, new DistributedParentEventArgs(connection.Username, connection.IPEndPoint, ParentBranchLevel, ParentBranchRoot)));
-src/Network/DistributedConnectionManager.cs:961:            => RaiseEvent(nameof(PromotedToBranchRoot), () => PromotedToBranchRoot?.Invoke(this, EventArgs.Empty));
-src/Network/DistributedConnectionManager.cs:964:            => RaiseEvent(nameof(StateChanged), () => StateChanged?.Invoke(this, DistributedNetworkInfo.FromDistributedConnectionManager(this)));
-src/Messaging/Handlers/DistributedMessageHandler.cs:51:                new DiagnosticFactory(SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
-src/Network/PeerConnectionManager.cs:63:                new DiagnosticFactory(SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
-src/Network/ListenerHandler.cs:52:                new DiagnosticFactory(SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
-src/Network/MessageConnection.cs:296:                        .Invoke(this, new MessageDataEventArgs(codeBytes, currentLength, totalLength)));
-src/Network/MessageConnection.cs:302:                    .Invoke(this, new MessageDataEventArgs(codeBytes, currentLength, totalLength)));
-src/Network/MessageConnection.cs:313:                        .Invoke(this, new MessageEventArgs(message)));
-src/Network/MessageConnection.cs:319:                    .Invoke(this, new MessageEventArgs(message)));
-src/Network/MessageConnection.cs:325:                .Invoke(this, new MessageReceivedEventArgs(length, code)));
-src/Network/MessageConnection.cs:334:                        .Invoke(this, new MessageEventArgs(message)));
-src/Network/MessageConnection.cs:340:                    .Invoke(this, new MessageEventArgs(message)));
 
 ## Unisolated server handler event invocations
 
@@ -182,15 +182,7 @@ src/Network/MessageConnection.cs:340:                    .Invoke(this, new Messa
 ## Unisolated SoulseekClient bridge event invocations
 
 ## Remote/user text in diagnostics or HTTP errors
-examples/Web/api/Startup.cs:305:                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [DIAGNOSTIC:{e.GetType().Name}] [{args.Level}] {args.Message}");
-examples/Web/api/Startup.cs:365:                Console.WriteLine($"[PUBLIC CHAT] [{args.RoomName}] [{args.Username}]: {args.Message}");
-examples/Web/api/Startup.cs:389:                Console.WriteLine($"Disconnected from Soulseek server: {args.Message}");
-examples/Web/api/Startup.cs:434:                Console.WriteLine($"[SEARCH RESPONSE DELIVERY] {args.SearchResponse.FileCount + args.SearchResponse.LockedFileCount} files to {args.Username} for query '{args.Query}'");
-examples/Web/api/Startup.cs:439:                Console.WriteLine($"[SEARCH RESPONSE DELIVERY FAILED] {args.SearchResponse.FileCount + args.SearchResponse.LockedFileCount} files to {args.Username} for query '{args.Query}'");
-examples/Web/api/Startup.cs:630:                Console.WriteLine($"[UPLOAD RE-REQUESTED] [{username}/{filename}]");
-examples/Web/api/Startup.cs:642:                    Console.WriteLine($"[UPLOAD SLOT REQUESTED] [{username}/{filename}]");
-examples/Web/api/Startup.cs:657:                    Console.WriteLine($"[UPLOAD SLOT RELEASED] [{username}/{filename}]");
-examples/Web/api/Startup.cs:717:                    Console.WriteLine($"[SENDING SEARCH RESULTS]: {results.Count()} records to {username} for query {query.SearchText}");
+examples/Web/api/SharedFileCache.cs:140:                Console.WriteLine($"[MALFORMED QUERY]: {query} ({ex.Message})");
 src/SearchResponder.cs:91:                        Diagnostic.Debug($"Discarded cached search response {responseToken} to {username} for query '{query}' with token {token}");
 src/SearchResponder.cs:106:                    Diagnostic.Warning($"Error removing cached search response {responseToken}: {ex.Message}", ex);
 src/SearchResponder.cs:138:                Diagnostic.Warning($"Error resolving search response for query '{query}' requested by {username} with token {token}: {ex.Message}", ex);
@@ -203,7 +195,6 @@ src/SearchResponder.cs:236:                    Diagnostic.Warning($"Error retrie
 src/SearchResponder.cs:249:                        Diagnostic.Debug($"Sent cached response {responseToken} containing {searchResponse.FileCount + searchResponse.LockedFileCount} files to {username} for query '{query}' with token {token}");
 src/SearchResponder.cs:255:                        Diagnostic.Debug($"Failed to send cached search response {responseToken} to {username} for query '{query}' with token {token}: {ex.Message}", ex);
 src/SearchResponder.cs:321:                Diagnostic.Warning($"Unhandled exception in {eventName} event handler: {ex.Message}", ex);
-examples/Web/api/SharedFileCache.cs:140:                Console.WriteLine($"[MALFORMED QUERY]: {query} ({ex.Message})");
 src/SoulseekClient.cs:189:                        Diagnostic.Debug($"Download of {GetDiagnosticLogValue(download.Filename)} from {download.Username} reported as failed by remote client (token: {download.Token})");
 src/SoulseekClient.cs:194:                    Diagnostic.Warning($"Failed to mark download(s) failed: {ex.Message}", ex);
 src/SoulseekClient.cs:215:                        Diagnostic.Debug($"Download of {GetDiagnosticLogValue(download.Filename)} from {download.Username} rejected by remote client (token: {download.Token})");
@@ -254,14 +245,16 @@ src/SoulseekClient.cs:5525:                            Diagnostic.Debug($"Upload
 src/SoulseekClient.cs:5531:                            Diagnostic.Warning($"Encountered Exception releasing upload slot for file {GetDiagnosticLogValue(upload.Filename)} to {username}: {ex.Message}", ex);
 src/SoulseekClient.cs:5540:                            Diagnostic.Debug($"Global upload semaphore for file {GetDiagnosticLogValue(upload.Filename)} to {username} released");
 src/SoulseekClient.cs:5544:                            Diagnostic.Warning($"Failed to release global upload semaphore for file {GetDiagnosticLogValue(upload.Filename)} to {username}: {ex.Message}");
+examples/Web/api/Startup.cs:305:                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [DIAGNOSTIC:{e.GetType().Name}] [{args.Level}] {args.Message}");
+examples/Web/api/Startup.cs:365:                Console.WriteLine($"[PUBLIC CHAT] [{args.RoomName}] [{args.Username}]: {args.Message}");
+examples/Web/api/Startup.cs:389:                Console.WriteLine($"Disconnected from Soulseek server: {args.Message}");
+examples/Web/api/Startup.cs:434:                Console.WriteLine($"[SEARCH RESPONSE DELIVERY] {args.SearchResponse.FileCount + args.SearchResponse.LockedFileCount} files to {args.Username} for query '{args.Query}'");
+examples/Web/api/Startup.cs:439:                Console.WriteLine($"[SEARCH RESPONSE DELIVERY FAILED] {args.SearchResponse.FileCount + args.SearchResponse.LockedFileCount} files to {args.Username} for query '{args.Query}'");
+examples/Web/api/Startup.cs:630:                Console.WriteLine($"[UPLOAD RE-REQUESTED] [{username}/{filename}]");
+examples/Web/api/Startup.cs:642:                    Console.WriteLine($"[UPLOAD SLOT REQUESTED] [{username}/{filename}]");
+examples/Web/api/Startup.cs:657:                    Console.WriteLine($"[UPLOAD SLOT RELEASED] [{username}/{filename}]");
+examples/Web/api/Startup.cs:717:                    Console.WriteLine($"[SENDING SEARCH RESULTS]: {results.Count()} records to {username} for query {query.SearchText}");
 src/Messaging/Handlers/DistributedMessageHandler.cs:329:                Diagnostic.Debug($"Failed to broadcast distributed message: {ex.Message}", ex);
-src/Messaging/Handlers/ServerMessageHandler.cs:369:                            Diagnostic.Debug($"Error handling NetInfo message: {ex.Message}");
-src/Messaging/Handlers/ServerMessageHandler.cs:385:                        Diagnostic.Debug($"Received CannotConnect message for token {cannotConnect.Token}{(!string.IsNullOrEmpty(cannotConnect.Username) ? $" from user {cannotConnect.Username}" : string.Empty)}");
-src/Messaging/Handlers/ServerMessageHandler.cs:427:                                Diagnostic.Debug($"Received transfer ConnectToPeer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for remote token {connectToPeerResponse.Token}");
-src/Messaging/Handlers/ServerMessageHandler.cs:438:                                        Diagnostic.Debug($"Solicited inbound transfer connection to {download.Username} ({connection.IPEndPoint}) for token {download.Token} (remote: {download.RemoteToken}) established. (id: {connection.Id})");
-src/Messaging/Handlers/ServerMessageHandler.cs:443:                                        Diagnostic.Debug($"Transfer ConnectToPeer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for remote token {connectToPeerResponse.Token} does not match any waiting downloads, discarding.");
-src/Messaging/Handlers/ServerMessageHandler.cs:469:                            Diagnostic.Debug($"Error handling ConnectToPeer response from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}): {ex.Message}");
-src/Messaging/Handlers/ServerMessageHandler.cs:656:                Diagnostic.Warning($"Unhandled exception in {eventName} event handler: {ex.Message}", ex);
 src/Messaging/Handlers/PeerMessageHandler.cs:163:                            Diagnostic.Warning($"Failed to resolve user info response: {ex.Message}", ex);
 src/Messaging/Handlers/PeerMessageHandler.cs:201:                            Diagnostic.Warning($"Error resolving search response for query '{searchRequest.Query}' requested by {connection.Username} with token {searchRequest.Token}: {ex.Message}", ex);
 src/Messaging/Handlers/PeerMessageHandler.cs:218:                            Diagnostic.Warning($"Failed to resolve browse response: {ex.Message}", ex);
@@ -272,6 +265,19 @@ src/Messaging/Handlers/PeerMessageHandler.cs:340:                        Diagnos
 src/Messaging/Handlers/PeerMessageHandler.cs:522:                Diagnostic.Warning($"Failed to invoke QueueDownload action: {ex.Message}", ex);
 src/Messaging/Handlers/PeerMessageHandler.cs:543:                Diagnostic.Warning($"Failed to resolve place in queue for file {filename} from {connection.Username}: {ex.Message}", ex);
 src/Messaging/Handlers/PeerMessageHandler.cs:555:                    Diagnostic.Warning($"Failed to send place in queue response for file {filename} from {connection.Username}: {ex.Message}", ex);
+src/Messaging/Handlers/ServerMessageHandler.cs:369:                            Diagnostic.Debug($"Error handling NetInfo message: {ex.Message}");
+src/Messaging/Handlers/ServerMessageHandler.cs:385:                        Diagnostic.Debug($"Received CannotConnect message for token {cannotConnect.Token}{(!string.IsNullOrEmpty(cannotConnect.Username) ? $" from user {cannotConnect.Username}" : string.Empty)}");
+src/Messaging/Handlers/ServerMessageHandler.cs:427:                                Diagnostic.Debug($"Received transfer ConnectToPeer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for remote token {connectToPeerResponse.Token}");
+src/Messaging/Handlers/ServerMessageHandler.cs:438:                                        Diagnostic.Debug($"Solicited inbound transfer connection to {download.Username} ({connection.IPEndPoint}) for token {download.Token} (remote: {download.RemoteToken}) established. (id: {connection.Id})");
+src/Messaging/Handlers/ServerMessageHandler.cs:443:                                        Diagnostic.Debug($"Transfer ConnectToPeer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for remote token {connectToPeerResponse.Token} does not match any waiting downloads, discarding.");
+src/Messaging/Handlers/ServerMessageHandler.cs:469:                            Diagnostic.Debug($"Error handling ConnectToPeer response from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}): {ex.Message}");
+src/Messaging/Handlers/ServerMessageHandler.cs:656:                Diagnostic.Warning($"Unhandled exception in {eventName} event handler: {ex.Message}", ex);
+src/Network/ListenerHandler.cs:166:                            Diagnostic.Debug($"Unexpected transfer connection for token {peerInit.Token} from {peerInit.Username} ({connection.IPEndPoint.Address}:{listenerPort}) (id: {connection.Id})");
+src/Network/ListenerHandler.cs:189:                        Diagnostic.Debug($"Peer PierceFirewall with token {pierceFirewall.Token} received from {peerUsername} ({connection.IPEndPoint.Address}:{listenerPort}) (id: {connection.Id})");
+src/Network/ListenerHandler.cs:196:                            Diagnostic.Debug($"Obfuscated distributed PierceFirewall with token {pierceFirewall.Token} accepted from {distributedUsername} ({connection.IPEndPoint.Address}:{listenerPort}); completing solicited distributed wait. (id: {connection.Id})");
+src/Network/ListenerHandler.cs:199:                        Diagnostic.Debug($"Distributed PierceFirewall with token {pierceFirewall.Token} received from {distributedUsername} ({connection.IPEndPoint.Address}:{listenerPort}) (id: {connection.Id})");
+src/Network/ListenerHandler.cs:208:                        Diagnostic.Debug($"PierceFirewall matching pending search response received from {username} ({connection.IPEndPoint.Address}:{listenerPort}) (id: {connection.Id})");
+src/Network/ListenerHandler.cs:232:                Diagnostic.Debug($"Failed to initialize direct connection from {GetConnectionDescription(connection)}: {ex.Message}");
 src/Network/DistributedConnectionManager.cs:246:                Diagnostic.Debug($"Inbound child connection to {username} ({c.IPEndPoint}) rejected: enabled {Enabled}; has parent: {HasParent}; is branch root: {IsBranchRoot}; children: {ChildDictionary.Count}/{ChildLimit}");
 src/Network/DistributedConnectionManager.cs:263:                Diagnostic.Debug($"Purging child connection cache of failed connection to {username} ({c.IPEndPoint})");
 src/Network/DistributedConnectionManager.cs:270:                Diagnostic.Debug($"Inbound child connection to {username} ({c.IPEndPoint}) accepted. (type: {c.Type}, id: {c.Id}");
@@ -358,16 +364,15 @@ src/Network/PeerConnectionManager.cs:1074:                Diagnostic.Debug($"Ind
 src/Network/PeerConnectionManager.cs:1079:                Diagnostic.Debug($"Failed to establish an indirect transfer connection to {username} with token {token}: {ex.Message}");
 src/Network/PeerConnectionManager.cs:1092:            Diagnostic.Debug($"Message connection to {connection.Username} ({connection.IPEndPoint}) disconnected. (type: {connection.Type}, id: {connection.Id})");
 src/Network/PeerConnectionManager.cs:1113:            Diagnostic.Debug($"Message connection cache now contains {MessageConnectionDictionary.Count} connections.");
-src/Network/ListenerHandler.cs:166:                            Diagnostic.Debug($"Unexpected transfer connection for token {peerInit.Token} from {peerInit.Username} ({connection.IPEndPoint.Address}:{listenerPort}) (id: {connection.Id})");
-src/Network/ListenerHandler.cs:189:                        Diagnostic.Debug($"Peer PierceFirewall with token {pierceFirewall.Token} received from {peerUsername} ({connection.IPEndPoint.Address}:{listenerPort}) (id: {connection.Id})");
-src/Network/ListenerHandler.cs:196:                            Diagnostic.Debug($"Obfuscated distributed PierceFirewall with token {pierceFirewall.Token} accepted from {distributedUsername} ({connection.IPEndPoint.Address}:{listenerPort}); completing solicited distributed wait. (id: {connection.Id})");
-src/Network/ListenerHandler.cs:199:                        Diagnostic.Debug($"Distributed PierceFirewall with token {pierceFirewall.Token} received from {distributedUsername} ({connection.IPEndPoint.Address}:{listenerPort}) (id: {connection.Id})");
-src/Network/ListenerHandler.cs:208:                        Diagnostic.Debug($"PierceFirewall matching pending search response received from {username} ({connection.IPEndPoint.Address}:{listenerPort}) (id: {connection.Id})");
-src/Network/ListenerHandler.cs:232:                Diagnostic.Debug($"Failed to initialize direct connection from {GetConnectionDescription(connection)}: {ex.Message}");
 
 ## Public mutable ownership surfaces
 examples/Web/api/Trackers/ConversationTracker.cs:16:        public ConcurrentDictionary<string, IList<PrivateMessage>> Conversations { get; } = new ConcurrentDictionary<string, IList<PrivateMessage>>();
 examples/Web/api/Trackers/ConversationTracker.cs:45:        public bool TryGet(string username, out IList<PrivateMessage> messages) => Conversations.TryGetValue(username, out messages);
+examples/Web/api/Program.cs:15:        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
+examples/Web/api/SharedFileCache.cs:83:        public IEnumerable<Soulseek.File> Search(SearchQuery query)
+examples/Web/api/Room.cs:28:        public IList<string> Operators { get; set; }
+examples/Web/api/Room.cs:38:        public IList<UserData> Users { get; set; } = new List<UserData>();
+examples/Web/api/Room.cs:43:        public IList<RoomMessage> Messages { get; set; } = new List<RoomMessage>();
 src/SearchScope.cs:42:        public SearchScope(SearchScopeType type, params string[] subjects)
 src/SearchScope.cs:93:        public IEnumerable<string> Subjects { get; }
 src/SearchScope.cs:112:        public static SearchScope User(params string[] usernames) => new SearchScope(SearchScopeType.User, usernames);
@@ -387,12 +392,10 @@ src/RoomInfo.cs:86:        public IReadOnlyCollection<string> Users { get; }
 src/RoomData.cs:44:        public RoomData(string name, IEnumerable<UserData> userList, bool isPrivate = false, string owner = null, IEnumerable<string> operatorList = null)
 src/RoomData.cs:86:        public IReadOnlyCollection<string> Operators { get; }
 src/RoomData.cs:101:        public IReadOnlyCollection<UserData> Users { get; }
-examples/Web/api/SharedFileCache.cs:83:        public IEnumerable<Soulseek.File> Search(SearchQuery query)
+src/File.cs:45:        public File(int code, string filename, long size, string extension, IEnumerable<FileAttribute> attributeList = null)
+src/File.cs:100:        public IReadOnlyCollection<FileAttribute> Attributes { get; }
 src/Options/SoulseekClientOptionsPatch.cs:213:        public Func<string, IPEndPoint, int, string, Task<IEnumerable<Directory>>> DirectoryContentsResolver { get; }
 src/Options/SoulseekClientOptions.cs:283:        public Func<string, IPEndPoint, int, string, Task<IEnumerable<Directory>>> DirectoryContentsResolver { get; }
-examples/Web/api/Room.cs:28:        public IList<string> Operators { get; set; }
-examples/Web/api/Room.cs:38:        public IList<UserData> Users { get; set; } = new List<UserData>();
-examples/Web/api/Room.cs:43:        public IList<RoomMessage> Messages { get; set; } = new List<RoomMessage>();
 src/SoulseekClient.cs:359:        public event EventHandler<IReadOnlyCollection<string>> ExcludedSearchPhrasesReceived;
 src/SoulseekClient.cs:415:        public event EventHandler<IReadOnlyCollection<string>> PrivilegedUserListReceived;
 src/SoulseekClient.cs:551:        public IReadOnlyCollection<Transfer> Downloads => DownloadDictionary.Values.Select(t => new Transfer(t)).ToList().AsReadOnly();
@@ -402,60 +405,57 @@ src/SoulseekClient.cs:2094:        public Task<IReadOnlyCollection<SimilarUser>>
 src/SoulseekClient.cs:2170:        public Task<IReadOnlyCollection<SimilarUser>> GetSimilarUsersAsync(CancellationToken? cancellationToken = null)
 src/SoulseekClient.cs:2456:        public Task<(Search Search, IReadOnlyCollection<SearchResponse> Responses)> SearchAsync(SearchQuery query, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
 src/SoulseekClient.cs:2624:        public Task SendPrivateMessageAsync(IEnumerable<string> usernames, string message, CancellationToken? cancellationToken = null)
-examples/Web/api/Program.cs:15:        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
 src/MeshRendezvousResult.cs:59:        public IReadOnlyCollection<PeerCapabilityRecord> CapabilityRecords { get; }
 src/MeshRendezvousResult.cs:69:        public IReadOnlyCollection<SimilarUser> SimilarUsers { get; }
 src/WishlistSearchScheduler.cs:45:        public WishlistSearchScheduler(ISoulseekClient client, IEnumerable<string> terms, WishlistSearchSchedulerOptions options = null)
-src/Network/DistributedConnectionManager.cs:160:        public IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> Children => ChildDictionary.Select(c => (c.Key, c.Value.Snapshot())).ToList().AsReadOnly();
-src/Network/DistributedConnectionManager.cs:356:        public async Task AddParentConnectionAsync(IEnumerable<(string Username, IPEndPoint IPEndPoint)> parentCandidates)
 src/WishlistSearchCompletedEventArgs.cs:34:        public WishlistSearchCompletedEventArgs(string term, Search search, IReadOnlyCollection<SearchResponse> responses, Exception exception)
 src/WishlistSearchCompletedEventArgs.cs:57:        public IReadOnlyCollection<SearchResponse> Responses { get; }
+examples/Web/api/DTO/RoomResponse.cs:26:        public IList<string> Operators { get; set; }
+examples/Web/api/DTO/RoomResponse.cs:36:        public IEnumerable<UserDataResponse> Users { get; set; } = new List<UserDataResponse>();
+examples/Web/api/DTO/RoomResponse.cs:41:        public IEnumerable<RoomMessageResponse> Messages { get; set; } = new List<RoomMessageResponse>();
 src/PeerCapabilityRegistry.cs:54:        public IReadOnlyCollection<PeerCapabilityRecord> Records => records.Values.OrderBy(r => r.Username).ToList().AsReadOnly();
-src/Network/PeerConnectionManager.cs:74:        public IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> MessageConnections => MessageConnectionDictionary.Values
-src/Network/MessageConnectionEventArgs.cs:65:        public byte[] Code => code?.ToArray();
-src/Network/MessageConnectionEventArgs.cs:102:        public byte[] Message => message?.ToArray();
-src/Network/MessageConnectionEventArgs.cs:126:        public byte[] Code => code?.ToArray();
 src/PeerCapabilityDescriptor.cs:79:        public IReadOnlyCollection<string> Features { get; }
 src/PeerDescriptorSignature.cs:64:        public byte[] PublicKey => publicKey.ToArray();
 src/PeerDescriptorSignature.cs:69:        public byte[] Signature => signature.ToArray();
-src/UserInfo.cs:83:        public byte[] Picture => picture == null ? null : (byte[])picture.Clone();
 src/ItemSimilarUsers.cs:39:        public ItemSimilarUsers(string item, IReadOnlyCollection<string> usernames)
 src/ItemSimilarUsers.cs:60:        public IReadOnlyCollection<string> Usernames { get; }
+src/Messaging/Messages/Server/ExcludedSearchPhrasesNotification.cs:40:        public static IReadOnlyCollection<string> FromByteArray(byte[] bytes)
 src/UserInterests.cs:40:        public UserInterests(string username, IReadOnlyCollection<string> liked, IReadOnlyCollection<string> hated)
 src/UserInterests.cs:63:        public IReadOnlyCollection<string> Hated { get; }
 src/UserInterests.cs:68:        public IReadOnlyCollection<string> Liked { get; }
 src/ItemRecommendations.cs:39:        public ItemRecommendations(string item, IReadOnlyCollection<Recommendation> recommendations)
 src/ItemRecommendations.cs:60:        public IReadOnlyCollection<Recommendation> Recommendations { get; }
+src/Network/PeerConnectionManager.cs:74:        public IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> MessageConnections => MessageConnectionDictionary.Values
 src/RecommendationList.cs:39:        public RecommendationList(IReadOnlyCollection<Recommendation> recommendations, IReadOnlyCollection<Recommendation> unrecommendations)
 src/RecommendationList.cs:61:        public IReadOnlyCollection<Recommendation> Recommendations { get; }
 src/RecommendationList.cs:66:        public IReadOnlyCollection<Recommendation> Unrecommendations { get; }
-examples/Web/api/DTO/RoomResponse.cs:26:        public IList<string> Operators { get; set; }
-examples/Web/api/DTO/RoomResponse.cs:36:        public IEnumerable<UserDataResponse> Users { get; set; } = new List<UserDataResponse>();
-examples/Web/api/DTO/RoomResponse.cs:41:        public IEnumerable<RoomMessageResponse> Messages { get; set; } = new List<RoomMessageResponse>();
-src/File.cs:45:        public File(int code, string filename, long size, string extension, IEnumerable<FileAttribute> attributeList = null)
-src/File.cs:100:        public IReadOnlyCollection<FileAttribute> Attributes { get; }
-src/Messaging/Messages/Server/MessageUsersCommand.cs:40:        public MessageUsersCommand(IEnumerable<string> usernames, string message)
-src/Messaging/Messages/Server/MessageUsersCommand.cs:61:        public IReadOnlyCollection<string> Usernames { get; }
-src/Messaging/Messages/Server/SimilarUsersResponse.cs:38:        public static IReadOnlyCollection<SimilarUser> FromByteArray(byte[] bytes)
-src/Messaging/Messages/Peer/FolderContentsResponse.cs:43:        public FolderContentsResponse(int token, string directoryName, IEnumerable<Directory> directories)
-src/Messaging/Messages/Peer/FolderContentsResponse.cs:70:        public IReadOnlyCollection<Directory> Directories { get; }
-src/Common/WaitKey.cs:42:        public WaitKey(params object[] tokenParts)
-src/Common/WaitKey.cs:56:        public object[] TokenParts => tokenParts.ToArray();
-src/Messaging/Messages/Server/RoomTickerListNotification.cs:83:        public IReadOnlyCollection<RoomTicker> Tickers { get; }
-src/Messaging/Messages/Server/NetInfoNotification.cs:45:        public NetInfoNotification(int parentCount, IEnumerable<(string Username, IPAddress IPAddress, int Port)> parents)
-src/Messaging/Messages/Server/NetInfoNotification.cs:92:        public IReadOnlyCollection<(string Username, IPAddress IPAddress, int Port)> Parents
-src/Messaging/Messages/Server/PrivilegedUserListNotification.cs:40:        public static IReadOnlyCollection<string> FromByteArray(byte[] bytes)
+src/Network/MessageConnectionEventArgs.cs:65:        public byte[] Code => code?.ToArray();
+src/Network/MessageConnectionEventArgs.cs:102:        public byte[] Message => message?.ToArray();
+src/Network/MessageConnectionEventArgs.cs:126:        public byte[] Code => code?.ToArray();
 src/BrowseResponse.cs:44:        public BrowseResponse(IEnumerable<Directory> directoryList = null, IEnumerable<Directory> lockedDirectoryList = null)
 src/BrowseResponse.cs:70:        public IReadOnlyCollection<Directory> Directories { get; }
 src/BrowseResponse.cs:80:        public IReadOnlyCollection<Directory> LockedDirectories { get; }
-src/Messaging/Messages/Server/ExcludedSearchPhrasesNotification.cs:40:        public static IReadOnlyCollection<string> FromByteArray(byte[] bytes)
-src/Messaging/Compression/ZStream.cs:78:		public byte[] next_in; // next input byte
-src/Messaging/Compression/ZStream.cs:83:		public byte[] next_out; // next output byte should be put there
+src/Network/DistributedConnectionManager.cs:160:        public IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> Children => ChildDictionary.Select(c => (c.Key, c.Value.Snapshot())).ToList().AsReadOnly();
+src/Network/DistributedConnectionManager.cs:356:        public async Task AddParentConnectionAsync(IEnumerable<(string Username, IPEndPoint IPEndPoint)> parentCandidates)
+src/Common/WaitKey.cs:42:        public WaitKey(params object[] tokenParts)
+src/Common/WaitKey.cs:56:        public object[] TokenParts => tokenParts.ToArray();
+src/DistributedNetworkInfo.cs:122:        public IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> Children => children?
+src/Messaging/Messages/Server/MessageUsersCommand.cs:40:        public MessageUsersCommand(IEnumerable<string> usernames, string message)
+src/Messaging/Messages/Server/MessageUsersCommand.cs:61:        public IReadOnlyCollection<string> Usernames { get; }
+src/UserInfo.cs:83:        public byte[] Picture => picture == null ? null : (byte[])picture.Clone();
 src/EventArgs/RoomTickerListReceivedEventArgs.cs:42:        public RoomTickerListReceivedEventArgs(string roomName, IEnumerable<RoomTicker> tickers)
 src/EventArgs/RoomTickerListReceivedEventArgs.cs:73:        public IReadOnlyCollection<RoomTicker> Tickers { get; }
-src/DistributedNetworkInfo.cs:122:        public IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> Children => children?
-src/Directory.cs:42:        public Directory(string name, IEnumerable<File> fileList = null)
-src/Directory.cs:70:        public IReadOnlyCollection<File> Files { get; }
+src/Messaging/Messages/Peer/FolderContentsResponse.cs:43:        public FolderContentsResponse(int token, string directoryName, IEnumerable<Directory> directories)
+src/Messaging/Messages/Peer/FolderContentsResponse.cs:70:        public IReadOnlyCollection<Directory> Directories { get; }
+src/Messaging/Messages/EmbeddedMessage.cs:56:        public byte[] DistributedMessage => distributedMessage?.ToArray();
+src/Messaging/Messages/Server/SimilarUsersResponse.cs:38:        public static IReadOnlyCollection<SimilarUser> FromByteArray(byte[] bytes)
 src/Messaging/Handlers/ServerMessageHandler.cs:69:        public event EventHandler<IReadOnlyCollection<string>> ExcludedSearchPhrasesReceived;
 src/Messaging/Handlers/ServerMessageHandler.cs:120:        public event EventHandler<IReadOnlyCollection<string>> PrivilegedUserListReceived;
-src/Messaging/Messages/EmbeddedMessage.cs:56:        public byte[] DistributedMessage => distributedMessage?.ToArray();
+src/Messaging/Compression/ZStream.cs:78:		public byte[] next_in; // next input byte
+src/Messaging/Compression/ZStream.cs:83:		public byte[] next_out; // next output byte should be put there
+src/Directory.cs:42:        public Directory(string name, IEnumerable<File> fileList = null)
+src/Directory.cs:70:        public IReadOnlyCollection<File> Files { get; }
+src/Messaging/Messages/Server/PrivilegedUserListNotification.cs:40:        public static IReadOnlyCollection<string> FromByteArray(byte[] bytes)
+src/Messaging/Messages/Server/RoomTickerListNotification.cs:83:        public IReadOnlyCollection<RoomTicker> Tickers { get; }
+src/Messaging/Messages/Server/NetInfoNotification.cs:45:        public NetInfoNotification(int parentCount, IEnumerable<(string Username, IPAddress IPAddress, int Port)> parents)
+src/Messaging/Messages/Server/NetInfoNotification.cs:92:        public IReadOnlyCollection<(string Username, IPAddress IPAddress, int Port)> Parents

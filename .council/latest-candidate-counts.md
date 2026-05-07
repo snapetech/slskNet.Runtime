@@ -1,19 +1,19 @@
 # slskNet.Runtime bug council candidate scan
-# Generated: 2026-05-07T01:52:41Z
+# Generated: 2026-05-07T02:18:11Z
 
 ## Mutable public byte arrays and array properties
 src/SearchScope.cs:112:        public static SearchScope User(params string[] usernames) => new SearchScope(SearchScopeType.User, usernames);
 src/PeerDescriptorSignature.cs:64:        public byte[] PublicKey => publicKey.ToArray();
 src/PeerDescriptorSignature.cs:69:        public byte[] Signature => signature.ToArray();
+tests/Soulseek.Tests.Unit/Network/Tcp/ConnectionKeyTests.cs:61:        public static IEnumerable<object[]> GetHashCodeData => new List<object[]>
 src/UserInfo.cs:83:        public byte[] Picture => picture == null ? null : (byte[])picture.Clone();
-src/Common/WaitKey.cs:56:        public object[] TokenParts => tokenParts.ToArray();
-src/Messaging/Messages/EmbeddedMessage.cs:56:        public byte[] DistributedMessage => distributedMessage?.ToArray();
 src/Messaging/Compression/ZStream.cs:78:		public byte[] next_in; // next input byte
 src/Messaging/Compression/ZStream.cs:83:		public byte[] next_out; // next output byte should be put there
+src/Common/WaitKey.cs:56:        public object[] TokenParts => tokenParts.ToArray();
+src/Messaging/Messages/EmbeddedMessage.cs:56:        public byte[] DistributedMessage => distributedMessage?.ToArray();
 src/Network/MessageConnectionEventArgs.cs:65:        public byte[] Code => code?.ToArray();
 src/Network/MessageConnectionEventArgs.cs:102:        public byte[] Message => message?.ToArray();
 src/Network/MessageConnectionEventArgs.cs:126:        public byte[] Code => code?.ToArray();
-tests/Soulseek.Tests.Unit/Network/Tcp/ConnectionKeyTests.cs:61:        public static IEnumerable<object[]> GetHashCodeData => new List<object[]>
 
 ## Constructors accepting mutable collections or params arrays
 src/BrowseResponse.cs:44:public BrowseResponse(IEnumerable<Directory> directoryList = null, IEnumerable<Directory> lockedDirectoryList = null)
@@ -46,28 +46,14 @@ src/WishlistSearchCompletedEventArgs.cs:34:public WishlistSearchCompletedEventAr
 src/WishlistSearchScheduler.cs:45:public WishlistSearchScheduler(ISoulseekClient client, IEnumerable<string> terms, WishlistSearchSchedulerOptions options = null)
 
 ## Value equality and hash-code comparisons
-src/Network/Tcp/ConnectionKey.cs:73:        public bool Equals(ConnectionKey other)
 src/Common/WaitKey.cs:58:        public static bool operator !=(WaitKey lhs, WaitKey rhs)
 src/Common/WaitKey.cs:63:        public static bool operator ==(WaitKey lhs, WaitKey rhs)
 src/Common/WaitKey.cs:83:        public bool Equals(WaitKey other)
+src/Network/Tcp/ConnectionKey.cs:73:        public bool Equals(ConnectionKey other)
 
 ## Non-idempotent task completion candidates
 
 ## Task, cancellation, timer, and semaphore lifecycle candidates
-src/TransferInternal.cs:234:        public TaskCompletionSource<bool> RemoteTaskCompletionSource { get; } = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-src/Common/Extensions.cs:35:    using System.Timers;
-src/Common/Extensions.cs:65:            task.ContinueWith(t =>
-src/Common/Extensions.cs:79:            task.ContinueWith(t => { throw (T)Activator.CreateInstance(typeof(T), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.RunContinuationsAsynchronously);
-src/Common/Extensions.cs:121:        public static void Reset(this Timer timer)
-src/Common/TokenBucket.cs:37:        private TaskCompletionSource<bool> waitForReset = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-src/Common/TokenBucket.cs:59:            Clock = new System.Timers.Timer(interval);
-src/Common/TokenBucket.cs:74:        private System.Timers.Timer Clock { get; set; }
-src/Common/TokenBucket.cs:77:        private SemaphoreSlim SyncRoot { get; } = new SemaphoreSlim(1, 1);
-src/Common/TokenBucket.cs:155:                    Interlocked.Exchange(ref waitForReset, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously))
-src/Common/TokenBucket.cs:191:            => Interlocked.Exchange(ref waitForReset, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously)).TrySetResult(true);
-src/Common/TokenBucket.cs:201:            var cancellationTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-src/Common/TokenBucket.cs:203:            using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetCanceled()))
-src/Common/TokenBucket.cs:205:                var completedTask = await Task.WhenAny(waitForReset.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
 src/Common/Waiter.cs:75:                wait.TaskCompletionSource.TrySetCanceled());
 src/Common/Waiter.cs:104:                ((TaskCompletionSource<T>)wait.TaskCompletionSource).TrySetResult(result));
 src/Common/Waiter.cs:157:                wait.TaskCompletionSource.TrySetException(exception));
@@ -83,28 +69,17 @@ src/Common/Waiter.cs:373:                CancellationTokenRegistration = Cancell
 src/Common/Waiter.cs:375:                TimeoutTokenSource = new CancellationTokenSource(Timeout);
 src/Common/Waiter.cs:376:                TimeoutTokenRegistration = TimeoutTokenSource.Token.Register(() => TimeoutAction());
 src/Common/Waiter.cs:389:                        // this will be null if the wait is disposed before Register() is called,
-src/WishlistSearchScheduler.cs:35:        private CancellationTokenSource cancellationTokenSource;
-src/WishlistSearchScheduler.cs:100:                    var nextSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-src/WishlistSearchScheduler.cs:103:                    loopTask = previousTask.ContinueWith(
-src/WishlistSearchScheduler.cs:133:                cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-src/WishlistSearchScheduler.cs:154:            CancellationTokenSource source;
-src/WishlistSearchScheduler.cs:181:                task.ContinueWith(
-src/SearchInternal.cs:32:    using SystemTimer = System.Timers.Timer;
-src/SearchInternal.cs:58:            SearchTimeoutTimer = new SystemTimer()
-src/SearchInternal.cs:65:            SearchTimeoutTimer.Elapsed += (sender, e) => { Complete(SearchStates.TimedOut); };
-src/SearchInternal.cs:114:        private SystemTimer SearchTimeoutTimer { get; set; }
-src/SearchInternal.cs:115:        private TaskCompletionSource<int> TaskCompletionSource { get; } = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
-src/SearchInternal.cs:127:                SearchTimeoutTimer.Stop();
-src/SearchInternal.cs:129:                TaskCompletionSource.TrySetException(new OperationCanceledException());
-src/SearchInternal.cs:147:                SearchTimeoutTimer.Stop();
-src/SearchInternal.cs:149:                TaskCompletionSource.TrySetResult(0);
-src/SearchInternal.cs:176:                    SearchTimeoutTimer.Dispose();
-src/SearchInternal.cs:200:                    SearchTimeoutTimer.Reset();
-src/SearchInternal.cs:268:                    SearchTimeoutTimer.Reset();
-src/SearchInternal.cs:297:            var cancellationTaskCompletionSource = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-src/SearchInternal.cs:298:            var taskCompletionSource = TaskCompletionSource;
-src/SearchInternal.cs:300:            using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetException(new OperationCanceledException("Operation cancelled"))))
-src/SearchInternal.cs:302:                var completedTask = await Task.WhenAny(taskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
+src/Common/TokenBucket.cs:37:        private TaskCompletionSource<bool> waitForReset = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+src/Common/TokenBucket.cs:59:            Clock = new System.Timers.Timer(interval);
+src/Common/TokenBucket.cs:74:        private System.Timers.Timer Clock { get; set; }
+src/Common/TokenBucket.cs:77:        private SemaphoreSlim SyncRoot { get; } = new SemaphoreSlim(1, 1);
+src/Common/TokenBucket.cs:155:                    Interlocked.Exchange(ref waitForReset, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously))
+src/Common/TokenBucket.cs:191:            => Interlocked.Exchange(ref waitForReset, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously)).TrySetResult(true);
+src/Common/TokenBucket.cs:201:            var cancellationTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+src/Common/TokenBucket.cs:203:            using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetCanceled()))
+src/Common/TokenBucket.cs:205:                var completedTask = await Task.WhenAny(waitForReset.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
+src/TransferInternal.cs:234:        public TaskCompletionSource<bool> RemoteTaskCompletionSource { get; } = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+src/Messaging/Handlers/ServerMessageHandler.cs:205:        public async void HandleMessageRead(object sender, byte[] message)
 src/SoulseekClient.cs:134:            SearchSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentSearches, maxCount: Options.MaximumConcurrentSearches);
 src/SoulseekClient.cs:136:            GlobalDownloadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentDownloads, maxCount: Options.MaximumConcurrentDownloads);
 src/SoulseekClient.cs:137:            GlobalUploadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploads, maxCount: Options.MaximumConcurrentUploads);
@@ -167,38 +142,37 @@ src/SoulseekClient.cs:5235:                using var linkedCancellationTokenSour
 src/SoulseekClient.cs:5236:                var linkedCancellationToken = linkedCancellationTokenSource.Token;
 src/SoulseekClient.cs:5319:                var firstTask = await Task.WhenAny(
 src/SoulseekClient.cs:5324:                linkedCancellationTokenSource.Cancel();
+src/Messaging/Handlers/PeerMessageHandler.cs:92:        public async void HandleMessageRead(object sender, byte[] message)
+src/Common/Extensions.cs:35:    using System.Timers;
+src/Common/Extensions.cs:65:            task.ContinueWith(t =>
+src/Common/Extensions.cs:79:            task.ContinueWith(t => { throw (T)Activator.CreateInstance(typeof(T), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.RunContinuationsAsynchronously);
+src/Common/Extensions.cs:121:        public static void Reset(this Timer timer)
+src/SearchInternal.cs:32:    using SystemTimer = System.Timers.Timer;
+src/SearchInternal.cs:58:            SearchTimeoutTimer = new SystemTimer()
+src/SearchInternal.cs:65:            SearchTimeoutTimer.Elapsed += (sender, e) => { Complete(SearchStates.TimedOut); };
+src/SearchInternal.cs:114:        private SystemTimer SearchTimeoutTimer { get; set; }
+src/SearchInternal.cs:115:        private TaskCompletionSource<int> TaskCompletionSource { get; } = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+src/SearchInternal.cs:127:                SearchTimeoutTimer.Stop();
+src/SearchInternal.cs:129:                TaskCompletionSource.TrySetException(new OperationCanceledException());
+src/SearchInternal.cs:147:                SearchTimeoutTimer.Stop();
+src/SearchInternal.cs:149:                TaskCompletionSource.TrySetResult(0);
+src/SearchInternal.cs:176:                    SearchTimeoutTimer.Dispose();
+src/SearchInternal.cs:200:                    SearchTimeoutTimer.Reset();
+src/SearchInternal.cs:268:                    SearchTimeoutTimer.Reset();
+src/SearchInternal.cs:297:            var cancellationTaskCompletionSource = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+src/SearchInternal.cs:298:            var taskCompletionSource = TaskCompletionSource;
+src/SearchInternal.cs:300:            using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetException(new OperationCanceledException("Operation cancelled"))))
+src/SearchInternal.cs:302:                var completedTask = await Task.WhenAny(taskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
+src/WishlistSearchScheduler.cs:35:        private CancellationTokenSource cancellationTokenSource;
+src/WishlistSearchScheduler.cs:100:                    var nextSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+src/WishlistSearchScheduler.cs:103:                    loopTask = previousTask.ContinueWith(
+src/WishlistSearchScheduler.cs:133:                cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+src/WishlistSearchScheduler.cs:154:            CancellationTokenSource source;
+src/WishlistSearchScheduler.cs:181:                task.ContinueWith(
+src/Messaging/Handlers/DistributedMessageHandler.cs:78:        public async void HandleChildMessageRead(object sender, byte[] message)
+src/Messaging/Handlers/DistributedMessageHandler.cs:144:        public async void HandleMessageRead(object sender, byte[] message)
+src/Messaging/Handlers/DistributedMessageHandler.cs:280:        public async void HandleEmbeddedMessage(byte[] message)
 src/Network/ListenerHandler.cs:68:        public async void HandleConnection(object sender, IConnection connection)
-src/Network/DistributedConnectionManager.cs:38:    using System.Timers;
-src/Network/DistributedConnectionManager.cs:43:    using SystemTimer = System.Timers.Timer;
-src/Network/DistributedConnectionManager.cs:73:            StatusDebounceTimer = new SystemTimer()
-src/Network/DistributedConnectionManager.cs:80:            StatusDebounceTimer.Elapsed += StatusDebounceTimer_Elapsed;
-src/Network/DistributedConnectionManager.cs:82:            WatchdogTimer = new SystemTimer()
-src/Network/DistributedConnectionManager.cs:89:            WatchdogTimer.Elapsed += WatchdogTimer_Elapsed;
-src/Network/DistributedConnectionManager.cs:221:        private SemaphoreSlim ParentSyncRoot { get; } = new SemaphoreSlim(1, 1);
-src/Network/DistributedConnectionManager.cs:222:        private ConcurrentDictionary<string, CancellationTokenSource> PendingInboundIndirectConnectionDictionary { get; set; } = new ConcurrentDictionary<string, CancellationTokenSource>();
-src/Network/DistributedConnectionManager.cs:225:        private SystemTimer StatusDebounceTimer { get; set; }
-src/Network/DistributedConnectionManager.cs:226:        private SemaphoreSlim StatusSyncRoot { get; } = new SemaphoreSlim(1, 1);
-src/Network/DistributedConnectionManager.cs:227:        private SystemTimer WatchdogTimer { get; }
-src/Network/DistributedConnectionManager.cs:393:                using var cts = new CancellationTokenSource();
-src/Network/DistributedConnectionManager.cs:641:                using (var cts = new CancellationTokenSource())
-src/Network/DistributedConnectionManager.cs:700:        public async void RemoveAndDisposeAll()
-src/Network/DistributedConnectionManager.cs:860:        private void AddOrUpdatePendingInboundIndirectConnection(string username, CancellationTokenSource pendingCts)
-src/Network/DistributedConnectionManager.cs:898:                    WatchdogTimer.Dispose();
-src/Network/DistributedConnectionManager.cs:899:                    StatusDebounceTimer.Dispose();
-src/Network/DistributedConnectionManager.cs:966:        private void RemovePendingInboundIndirectConnection(string username, CancellationTokenSource pendingCts)
-src/Network/DistributedConnectionManager.cs:968:            var pending = (ICollection<KeyValuePair<string, CancellationTokenSource>>)PendingInboundIndirectConnectionDictionary;
-src/Network/DistributedConnectionManager.cs:969:            pending.Remove(new KeyValuePair<string, CancellationTokenSource>(username, pendingCts));
-src/Network/DistributedConnectionManager.cs:1004:            using var directCts = new CancellationTokenSource();
-src/Network/DistributedConnectionManager.cs:1005:            using var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token);
-src/Network/DistributedConnectionManager.cs:1006:            using var indirectCts = new CancellationTokenSource();
-src/Network/DistributedConnectionManager.cs:1007:            using var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token);
-src/Network/DistributedConnectionManager.cs:1034:                task = await Task.WhenAny(tasks).ConfigureAwait(false);
-src/Network/DistributedConnectionManager.cs:1082:                        task = await Task.WhenAny(tasks).ConfigureAwait(false);
-src/Network/DistributedConnectionManager.cs:1194:        private async void ParentConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
-src/Network/DistributedConnectionManager.cs:1222:            if (StatusDebounceTimer.Enabled && LastStatusTimestamp.AddMilliseconds(StatusAgeLimit) <= DateTime.UtcNow)
-src/Network/DistributedConnectionManager.cs:1228:            StatusDebounceTimer.Reset();
-src/Network/DistributedConnectionManager.cs:1276:        private async void StatusDebounceTimer_Elapsed(object sender, ElapsedEventArgs e)
-src/Network/DistributedConnectionManager.cs:1380:        private void WatchdogTimer_Elapsed(object sender, ElapsedEventArgs e)
 src/Network/Tcp/Connection.cs:34:    using SystemTimer = System.Timers.Timer;
 src/Network/Tcp/Connection.cs:73:            WriteQueueSemaphore = new SemaphoreSlim(Options.WriteQueueSize);
 src/Network/Tcp/Connection.cs:77:                InactivityTimer = new SystemTimer()
@@ -260,14 +234,39 @@ src/Network/PeerConnectionManager.cs:860:        private void AddOrUpdatePending
 src/Network/PeerConnectionManager.cs:1100:        private void RemovePendingInboundIndirectConnection(string username, CancellationTokenSource pendingCts)
 src/Network/PeerConnectionManager.cs:1102:            var pending = (ICollection<KeyValuePair<string, CancellationTokenSource>>)PendingInboundIndirectConnectionDictionary;
 src/Network/PeerConnectionManager.cs:1103:            pending.Remove(new KeyValuePair<string, CancellationTokenSource>(username, pendingCts));
-src/Messaging/Handlers/ServerMessageHandler.cs:205:        public async void HandleMessageRead(object sender, byte[] message)
-src/Messaging/Handlers/PeerMessageHandler.cs:92:        public async void HandleMessageRead(object sender, byte[] message)
-src/Messaging/Handlers/DistributedMessageHandler.cs:78:        public async void HandleChildMessageRead(object sender, byte[] message)
-src/Messaging/Handlers/DistributedMessageHandler.cs:144:        public async void HandleMessageRead(object sender, byte[] message)
-src/Messaging/Handlers/DistributedMessageHandler.cs:280:        public async void HandleEmbeddedMessage(byte[] message)
+src/Network/DistributedConnectionManager.cs:38:    using System.Timers;
+src/Network/DistributedConnectionManager.cs:43:    using SystemTimer = System.Timers.Timer;
+src/Network/DistributedConnectionManager.cs:73:            StatusDebounceTimer = new SystemTimer()
+src/Network/DistributedConnectionManager.cs:80:            StatusDebounceTimer.Elapsed += StatusDebounceTimer_Elapsed;
+src/Network/DistributedConnectionManager.cs:82:            WatchdogTimer = new SystemTimer()
+src/Network/DistributedConnectionManager.cs:89:            WatchdogTimer.Elapsed += WatchdogTimer_Elapsed;
+src/Network/DistributedConnectionManager.cs:221:        private SemaphoreSlim ParentSyncRoot { get; } = new SemaphoreSlim(1, 1);
+src/Network/DistributedConnectionManager.cs:222:        private ConcurrentDictionary<string, CancellationTokenSource> PendingInboundIndirectConnectionDictionary { get; set; } = new ConcurrentDictionary<string, CancellationTokenSource>();
+src/Network/DistributedConnectionManager.cs:225:        private SystemTimer StatusDebounceTimer { get; set; }
+src/Network/DistributedConnectionManager.cs:226:        private SemaphoreSlim StatusSyncRoot { get; } = new SemaphoreSlim(1, 1);
+src/Network/DistributedConnectionManager.cs:227:        private SystemTimer WatchdogTimer { get; }
+src/Network/DistributedConnectionManager.cs:393:                using var cts = new CancellationTokenSource();
+src/Network/DistributedConnectionManager.cs:641:                using (var cts = new CancellationTokenSource())
+src/Network/DistributedConnectionManager.cs:700:        public async void RemoveAndDisposeAll()
+src/Network/DistributedConnectionManager.cs:860:        private void AddOrUpdatePendingInboundIndirectConnection(string username, CancellationTokenSource pendingCts)
+src/Network/DistributedConnectionManager.cs:898:                    WatchdogTimer.Dispose();
+src/Network/DistributedConnectionManager.cs:899:                    StatusDebounceTimer.Dispose();
+src/Network/DistributedConnectionManager.cs:966:        private void RemovePendingInboundIndirectConnection(string username, CancellationTokenSource pendingCts)
+src/Network/DistributedConnectionManager.cs:968:            var pending = (ICollection<KeyValuePair<string, CancellationTokenSource>>)PendingInboundIndirectConnectionDictionary;
+src/Network/DistributedConnectionManager.cs:969:            pending.Remove(new KeyValuePair<string, CancellationTokenSource>(username, pendingCts));
+src/Network/DistributedConnectionManager.cs:1004:            using var directCts = new CancellationTokenSource();
+src/Network/DistributedConnectionManager.cs:1005:            using var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token);
+src/Network/DistributedConnectionManager.cs:1006:            using var indirectCts = new CancellationTokenSource();
+src/Network/DistributedConnectionManager.cs:1007:            using var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token);
+src/Network/DistributedConnectionManager.cs:1034:                task = await Task.WhenAny(tasks).ConfigureAwait(false);
+src/Network/DistributedConnectionManager.cs:1082:                        task = await Task.WhenAny(tasks).ConfigureAwait(false);
+src/Network/DistributedConnectionManager.cs:1194:        private async void ParentConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
+src/Network/DistributedConnectionManager.cs:1222:            if (StatusDebounceTimer.Enabled && LastStatusTimestamp.AddMilliseconds(StatusAgeLimit) <= DateTime.UtcNow)
+src/Network/DistributedConnectionManager.cs:1228:            StatusDebounceTimer.Reset();
+src/Network/DistributedConnectionManager.cs:1276:        private async void StatusDebounceTimer_Elapsed(object sender, ElapsedEventArgs e)
+src/Network/DistributedConnectionManager.cs:1380:        private void WatchdogTimer_Elapsed(object sender, ElapsedEventArgs e)
 
 ## Lifecycle task completion and race candidates
-src/TransferInternal.cs:234:        public TaskCompletionSource<bool> RemoteTaskCompletionSource { get; } = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 src/SearchInternal.cs:115:        private TaskCompletionSource<int> TaskCompletionSource { get; } = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
 src/SearchInternal.cs:129:                TaskCompletionSource.TrySetException(new OperationCanceledException());
 src/SearchInternal.cs:149:                TaskCompletionSource.TrySetResult(0);
@@ -277,16 +276,6 @@ src/SearchInternal.cs:300:            using (cancellationToken.Register(() => ca
 src/SearchInternal.cs:302:                var completedTask = await Task.WhenAny(taskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
 src/WishlistSearchScheduler.cs:103:                    loopTask = previousTask.ContinueWith(
 src/WishlistSearchScheduler.cs:181:                task.ContinueWith(
-src/Common/Extensions.cs:65:            task.ContinueWith(t =>
-src/Common/Extensions.cs:79:            task.ContinueWith(t => { throw (T)Activator.CreateInstance(typeof(T), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.RunContinuationsAsynchronously);
-src/Common/Waiter.cs:75:                wait.TaskCompletionSource.TrySetCanceled());
-src/Common/Waiter.cs:104:                ((TaskCompletionSource<T>)wait.TaskCompletionSource).TrySetResult(result));
-src/Common/Waiter.cs:157:                wait.TaskCompletionSource.TrySetException(exception));
-src/Common/Waiter.cs:167:                wait.TaskCompletionSource.TrySetException(new TimeoutException($"The wait timed out after {wait.Timeout} milliseconds")));
-src/Common/Waiter.cs:197:            var taskCompletionSource = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
-src/Common/Waiter.cs:228:            return ((TaskCompletionSource<T>)wait.TaskCompletionSource).Task;
-src/Common/Waiter.cs:334:                TaskCompletionSource = taskCompletionSource;
-src/Common/Waiter.cs:344:            public dynamic TaskCompletionSource { get; }
 src/SoulseekClient.cs:188:                        download.RemoteTaskCompletionSource.TrySetException(new TransferReportedFailedException("Download reported as failed by remote client"));
 src/SoulseekClient.cs:214:                        download.RemoteTaskCompletionSource.TrySetException(new TransferRejectedException(e.Message));
 src/SoulseekClient.cs:1407:            var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -313,18 +302,39 @@ src/SoulseekClient.cs:3905:                    await download.RemoteTaskCompleti
 src/SoulseekClient.cs:4985:            var completedTask = await Task.WhenAny(enqueuedTask, transferTask).ConfigureAwait(false);
 src/SoulseekClient.cs:5231:                var disconnectedTaskCancellationSource = new TaskCompletionSource<Exception>(cancellationToken);
 src/SoulseekClient.cs:5319:                var firstTask = await Task.WhenAny(
+src/TransferInternal.cs:234:        public TaskCompletionSource<bool> RemoteTaskCompletionSource { get; } = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 src/Common/TokenBucket.cs:37:        private TaskCompletionSource<bool> waitForReset = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 src/Common/TokenBucket.cs:155:                    Interlocked.Exchange(ref waitForReset, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously))
 src/Common/TokenBucket.cs:191:            => Interlocked.Exchange(ref waitForReset, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously)).TrySetResult(true);
 src/Common/TokenBucket.cs:201:            var cancellationTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 src/Common/TokenBucket.cs:203:            using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetCanceled()))
 src/Common/TokenBucket.cs:205:                var completedTask = await Task.WhenAny(waitForReset.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
+src/Common/Extensions.cs:65:            task.ContinueWith(t =>
+src/Common/Extensions.cs:79:            task.ContinueWith(t => { throw (T)Activator.CreateInstance(typeof(T), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.RunContinuationsAsynchronously);
+src/Common/Waiter.cs:75:                wait.TaskCompletionSource.TrySetCanceled());
+src/Common/Waiter.cs:104:                ((TaskCompletionSource<T>)wait.TaskCompletionSource).TrySetResult(result));
+src/Common/Waiter.cs:157:                wait.TaskCompletionSource.TrySetException(exception));
+src/Common/Waiter.cs:167:                wait.TaskCompletionSource.TrySetException(new TimeoutException($"The wait timed out after {wait.Timeout} milliseconds")));
+src/Common/Waiter.cs:197:            var taskCompletionSource = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+src/Common/Waiter.cs:228:            return ((TaskCompletionSource<T>)wait.TaskCompletionSource).Task;
+src/Common/Waiter.cs:334:                TaskCompletionSource = taskCompletionSource;
+src/Common/Waiter.cs:344:            public dynamic TaskCompletionSource { get; }
+src/Messaging/Handlers/DistributedMessageHandler.cs:78:        public async void HandleChildMessageRead(object sender, byte[] message)
+src/Messaging/Handlers/DistributedMessageHandler.cs:144:        public async void HandleMessageRead(object sender, byte[] message)
+src/Messaging/Handlers/DistributedMessageHandler.cs:280:        public async void HandleEmbeddedMessage(byte[] message)
+src/Messaging/Handlers/ServerMessageHandler.cs:205:        public async void HandleMessageRead(object sender, byte[] message)
+src/Messaging/Handlers/PeerMessageHandler.cs:92:        public async void HandleMessageRead(object sender, byte[] message)
+src/Network/ListenerHandler.cs:68:        public async void HandleConnection(object sender, IConnection connection)
 src/Network/DistributedConnectionManager.cs:700:        public async void RemoveAndDisposeAll()
 src/Network/DistributedConnectionManager.cs:1034:                task = await Task.WhenAny(tasks).ConfigureAwait(false);
 src/Network/DistributedConnectionManager.cs:1082:                        task = await Task.WhenAny(tasks).ConfigureAwait(false);
 src/Network/DistributedConnectionManager.cs:1194:        private async void ParentConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
 src/Network/DistributedConnectionManager.cs:1276:        private async void StatusDebounceTimer_Elapsed(object sender, ElapsedEventArgs e)
-src/Network/ListenerHandler.cs:68:        public async void HandleConnection(object sender, IConnection connection)
+src/Network/PeerConnectionManager.cs:249:                task = await Task.WhenAny(tasks).ConfigureAwait(false);
+src/Network/PeerConnectionManager.cs:501:                    task = await Task.WhenAny(tasks).ConfigureAwait(false);
+src/Network/PeerConnectionManager.cs:716:                task = await Task.WhenAny(tasks).ConfigureAwait(false);
+src/Network/PeerConnectionManager.cs:755:                        task = await Task.WhenAny(tasks).ConfigureAwait(false);
+src/Network/PeerConnectionManager.cs:789:        public async void RemoveAndDisposeAll()
 src/Network/Tcp/Connection.cs:221:        private TaskCompletionSource<string> DisconnectTaskCompletionSource { get; } = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 src/Network/Tcp/Connection.cs:257:            var timeoutTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 src/Network/Tcp/Connection.cs:258:            var cancellationTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -339,26 +349,8 @@ src/Network/Tcp/Connection.cs:485:                return DisconnectTaskCompletio
 src/Network/Tcp/Connection.cs:599:                    DisconnectTaskCompletionSource.TrySetException(exception);
 src/Network/Tcp/Connection.cs:603:                    DisconnectTaskCompletionSource.TrySetResult(message);
 src/Network/Tcp/Connection.cs:735:                return await DisconnectTaskCompletionSource.Task.ConfigureAwait(false);
-src/Network/PeerConnectionManager.cs:249:                task = await Task.WhenAny(tasks).ConfigureAwait(false);
-src/Network/PeerConnectionManager.cs:501:                    task = await Task.WhenAny(tasks).ConfigureAwait(false);
-src/Network/PeerConnectionManager.cs:716:                task = await Task.WhenAny(tasks).ConfigureAwait(false);
-src/Network/PeerConnectionManager.cs:755:                        task = await Task.WhenAny(tasks).ConfigureAwait(false);
-src/Network/PeerConnectionManager.cs:789:        public async void RemoveAndDisposeAll()
-src/Messaging/Handlers/ServerMessageHandler.cs:205:        public async void HandleMessageRead(object sender, byte[] message)
-src/Messaging/Handlers/PeerMessageHandler.cs:92:        public async void HandleMessageRead(object sender, byte[] message)
-src/Messaging/Handlers/DistributedMessageHandler.cs:78:        public async void HandleChildMessageRead(object sender, byte[] message)
-src/Messaging/Handlers/DistributedMessageHandler.cs:144:        public async void HandleMessageRead(object sender, byte[] message)
-src/Messaging/Handlers/DistributedMessageHandler.cs:280:        public async void HandleEmbeddedMessage(byte[] message)
 
 ## Lifecycle cancellation registration candidates
-src/Common/Waiter.cs:227:            wait.Register();
-src/Common/Waiter.cs:357:            private CancellationTokenSource TimeoutTokenSource { get; set; }
-src/Common/Waiter.cs:371:            public void Register()
-src/Common/Waiter.cs:373:                CancellationTokenRegistration = CancellationToken.Register(() => CancelAction());
-src/Common/Waiter.cs:375:                TimeoutTokenSource = new CancellationTokenSource(Timeout);
-src/Common/Waiter.cs:376:                TimeoutTokenRegistration = TimeoutTokenSource.Token.Register(() => TimeoutAction());
-src/Common/Waiter.cs:389:                        // this will be null if the wait is disposed before Register() is called,
-src/Common/TokenBucket.cs:203:            using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetCanceled()))
 src/SoulseekClient.cs:3556:                    using var loginFailureCts = new CancellationTokenSource();
 src/SoulseekClient.cs:3557:                    using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, loginFailureCts.Token);
 src/SoulseekClient.cs:3817:                using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -372,12 +364,14 @@ src/WishlistSearchScheduler.cs:100:                    var nextSource = Cancella
 src/WishlistSearchScheduler.cs:133:                cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 src/WishlistSearchScheduler.cs:154:            CancellationTokenSource source;
 src/SearchInternal.cs:300:            using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetException(new OperationCanceledException("Operation cancelled"))))
-src/Network/Tcp/Connection.cs:265:                using (var timeoutCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(Options.ConnectTimeout)))
-src/Network/Tcp/Connection.cs:291:                    using (timeoutCancellationTokenSource.Token.Register(() => timeoutTaskCompletionSource.TrySetResult(true)))
-src/Network/Tcp/Connection.cs:292:                    using (((CancellationToken)cancellationToken).Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
-src/Network/Tcp/Connection.cs:294:                    await using (timeoutCancellationTokenSource.Token.Register(() => timeoutTaskCompletionSource.TrySetResult(true)))
-src/Network/Tcp/Connection.cs:295:                    await using (((CancellationToken)cancellationToken).Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
-src/Network/Tcp/Connection.cs:732:            using (cancellationToken.Register(() =>
+src/Common/TokenBucket.cs:203:            using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetCanceled()))
+src/Common/Waiter.cs:227:            wait.Register();
+src/Common/Waiter.cs:357:            private CancellationTokenSource TimeoutTokenSource { get; set; }
+src/Common/Waiter.cs:371:            public void Register()
+src/Common/Waiter.cs:373:                CancellationTokenRegistration = CancellationToken.Register(() => CancelAction());
+src/Common/Waiter.cs:375:                TimeoutTokenSource = new CancellationTokenSource(Timeout);
+src/Common/Waiter.cs:376:                TimeoutTokenRegistration = TimeoutTokenSource.Token.Register(() => TimeoutAction());
+src/Common/Waiter.cs:389:                        // this will be null if the wait is disposed before Register() is called,
 src/Network/DistributedConnectionManager.cs:222:        private ConcurrentDictionary<string, CancellationTokenSource> PendingInboundIndirectConnectionDictionary { get; set; } = new ConcurrentDictionary<string, CancellationTokenSource>();
 src/Network/DistributedConnectionManager.cs:393:                using var cts = new CancellationTokenSource();
 src/Network/DistributedConnectionManager.cs:641:                using (var cts = new CancellationTokenSource())
@@ -389,6 +383,12 @@ src/Network/DistributedConnectionManager.cs:1004:            using var directCts
 src/Network/DistributedConnectionManager.cs:1005:            using var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token);
 src/Network/DistributedConnectionManager.cs:1006:            using var indirectCts = new CancellationTokenSource();
 src/Network/DistributedConnectionManager.cs:1007:            using var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token);
+src/Network/Tcp/Connection.cs:265:                using (var timeoutCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(Options.ConnectTimeout)))
+src/Network/Tcp/Connection.cs:291:                    using (timeoutCancellationTokenSource.Token.Register(() => timeoutTaskCompletionSource.TrySetResult(true)))
+src/Network/Tcp/Connection.cs:292:                    using (((CancellationToken)cancellationToken).Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
+src/Network/Tcp/Connection.cs:294:                    await using (timeoutCancellationTokenSource.Token.Register(() => timeoutTaskCompletionSource.TrySetResult(true)))
+src/Network/Tcp/Connection.cs:295:                    await using (((CancellationToken)cancellationToken).Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
+src/Network/Tcp/Connection.cs:732:            using (cancellationToken.Register(() =>
 src/Network/PeerConnectionManager.cs:94:        private ConcurrentDictionary<string, CancellationTokenSource> PendingInboundIndirectConnectionDictionary { get; set; } =
 src/Network/PeerConnectionManager.cs:95:            new ConcurrentDictionary<string, CancellationTokenSource>();
 src/Network/PeerConnectionManager.cs:225:            using var directCts = new CancellationTokenSource();
@@ -412,17 +412,6 @@ src/Network/PeerConnectionManager.cs:1102:            var pending = (ICollection
 src/Network/PeerConnectionManager.cs:1103:            pending.Remove(new KeyValuePair<string, CancellationTokenSource>(username, pendingCts));
 
 ## Lifecycle timer and semaphore candidates
-src/SearchInternal.cs:32:    using SystemTimer = System.Timers.Timer;
-src/SearchInternal.cs:58:            SearchTimeoutTimer = new SystemTimer()
-src/SearchInternal.cs:114:        private SystemTimer SearchTimeoutTimer { get; set; }
-src/SearchInternal.cs:127:                SearchTimeoutTimer.Stop();
-src/SearchInternal.cs:147:                SearchTimeoutTimer.Stop();
-src/SearchInternal.cs:200:                    SearchTimeoutTimer.Reset();
-src/SearchInternal.cs:268:                    SearchTimeoutTimer.Reset();
-src/Common/TokenBucket.cs:59:            Clock = new System.Timers.Timer(interval);
-src/Common/TokenBucket.cs:66:            Clock.Start();
-src/Common/TokenBucket.cs:74:        private System.Timers.Timer Clock { get; set; }
-src/Common/TokenBucket.cs:77:        private SemaphoreSlim SyncRoot { get; } = new SemaphoreSlim(1, 1);
 src/SoulseekClient.cs:134:            SearchSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentSearches, maxCount: Options.MaximumConcurrentSearches);
 src/SoulseekClient.cs:136:            GlobalDownloadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentDownloads, maxCount: Options.MaximumConcurrentDownloads);
 src/SoulseekClient.cs:137:            GlobalUploadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploads, maxCount: Options.MaximumConcurrentUploads);
@@ -467,6 +456,19 @@ src/SoulseekClient.cs:5147:            SemaphoreSlim semaphore = null;
 src/SoulseekClient.cs:5158:                    semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploadsPerUser, maxCount: Options.MaximumConcurrentUploadsPerUser));
 src/Common/Extensions.cs:125:                timer.Stop();
 src/Common/Extensions.cs:126:                timer.Start();
+src/SearchInternal.cs:32:    using SystemTimer = System.Timers.Timer;
+src/SearchInternal.cs:58:            SearchTimeoutTimer = new SystemTimer()
+src/SearchInternal.cs:114:        private SystemTimer SearchTimeoutTimer { get; set; }
+src/SearchInternal.cs:127:                SearchTimeoutTimer.Stop();
+src/SearchInternal.cs:147:                SearchTimeoutTimer.Stop();
+src/SearchInternal.cs:200:                    SearchTimeoutTimer.Reset();
+src/SearchInternal.cs:268:                    SearchTimeoutTimer.Reset();
+src/Common/TokenBucket.cs:59:            Clock = new System.Timers.Timer(interval);
+src/Common/TokenBucket.cs:66:            Clock.Start();
+src/Common/TokenBucket.cs:74:        private System.Timers.Timer Clock { get; set; }
+src/Common/TokenBucket.cs:77:        private SemaphoreSlim SyncRoot { get; } = new SemaphoreSlim(1, 1);
+src/Network/Tcp/TcpListenerAdapter.cs:84:            TcpListener.Start();
+src/Network/Tcp/TcpListenerAdapter.cs:93:            TcpListener.Stop();
 src/Network/DistributedConnectionManager.cs:43:    using SystemTimer = System.Timers.Timer;
 src/Network/DistributedConnectionManager.cs:73:            StatusDebounceTimer = new SystemTimer()
 src/Network/DistributedConnectionManager.cs:82:            WatchdogTimer = new SystemTimer()
@@ -477,8 +479,6 @@ src/Network/DistributedConnectionManager.cs:227:        private SystemTimer Watc
 src/Network/DistributedConnectionManager.cs:493:            sw.Start();
 src/Network/DistributedConnectionManager.cs:504:            sw.Stop();
 src/Network/DistributedConnectionManager.cs:1228:            StatusDebounceTimer.Reset();
-src/Network/Tcp/TcpListenerAdapter.cs:84:            TcpListener.Start();
-src/Network/Tcp/TcpListenerAdapter.cs:93:            TcpListener.Stop();
 src/Network/Tcp/Listener.cs:106:            TcpListener.Start();
 src/Network/Tcp/Listener.cs:116:            TcpListener.Stop();
 src/Network/Tcp/Connection.cs:34:    using SystemTimer = System.Timers.Timer;
@@ -522,21 +522,30 @@ src/Network/Tcp/Connection.cs:787:                buffer = new byte[Options.Writ
 src/Network/Tcp/Connection.cs:794:                while (totalBytesWritten < length)
 src/Messaging/Messages/Server/JoinRoomResponse.cs:55:            for (int i = 0; i < userCount; i++)
 src/Messaging/Messages/Server/JoinRoomResponse.cs:64:            for (int i = 0; i < statusCount; i++)
-src/Messaging/Messages/Server/JoinRoomResponse.cs:66:                statuses.Add((UserPresence)reader.ReadInteger());
-src/Messaging/Messages/Server/JoinRoomResponse.cs:74:            for (int i = 0; i < dataCount; i++)
-src/Messaging/Messages/Server/JoinRoomResponse.cs:76:                var averageSpeed = reader.ReadInteger();
-src/Messaging/Messages/Server/JoinRoomResponse.cs:77:                var downloadCount = reader.ReadLong();
-src/Messaging/Messages/Server/JoinRoomResponse.cs:78:                var fileCount = reader.ReadInteger();
-src/Messaging/Messages/Server/JoinRoomResponse.cs:79:                var directoryCount = reader.ReadInteger();
-src/Messaging/Messages/Server/JoinRoomResponse.cs:93:            for (int i = 0; i < slotsFreeCount; i++)
-src/Messaging/Messages/Server/JoinRoomResponse.cs:95:                var slotCount = reader.ReadInteger();
-src/Messaging/Messages/Server/JoinRoomResponse.cs:104:            for (int i = 0; i < countryCount; i++)
-src/Messaging/Messages/Server/JoinRoomResponse.cs:111:            for (int i = 0; i < userCount; i++)
-src/Messaging/Messages/Server/JoinRoomResponse.cs:132:                for (int i = 0; i < operatorCount; i++)
-src/Messaging/Messages/Server/CannotConnect.cs:71:            var token = reader.ReadInteger();
+src/Messaging/Messages/Server/JoinRoomResponse.cs:66:                statuses.Add(ProtocolValueValidator.ToDefinedEnum<UserPresence>(reader.ReadInteger(), "user presence"));
+src/Messaging/Messages/Server/JoinRoomResponse.cs:73:            for (int i = 0; i < dataCount; i++)
+src/Messaging/Messages/Server/JoinRoomResponse.cs:75:                var averageSpeed = reader.ReadInteger();
+src/Messaging/Messages/Server/JoinRoomResponse.cs:76:                var downloadCount = reader.ReadLong();
+src/Messaging/Messages/Server/JoinRoomResponse.cs:77:                var fileCount = reader.ReadInteger();
+src/Messaging/Messages/Server/JoinRoomResponse.cs:78:                var directoryCount = reader.ReadInteger();
+src/Messaging/Messages/Server/JoinRoomResponse.cs:92:            for (int i = 0; i < slotsFreeCount; i++)
+src/Messaging/Messages/Server/JoinRoomResponse.cs:94:                var slotCount = reader.ReadInteger();
+src/Messaging/Messages/Server/JoinRoomResponse.cs:103:            for (int i = 0; i < countryCount; i++)
+src/Messaging/Messages/Server/JoinRoomResponse.cs:110:            for (int i = 0; i < userCount; i++)
+src/Messaging/Messages/Server/JoinRoomResponse.cs:131:                for (int i = 0; i < operatorCount; i++)
 src/Messaging/Messages/Server/IntegerResponse.cs:44:            return reader.ReadInteger();
-src/Messaging/Messages/Server/ProtocolCountReader.cs:40:            return ReadValidatedCount(reader.ReadInteger(), reader.Remaining, collectionName, minimumBytesPerItem);
-src/Messaging/Messages/Server/ProtocolCountReader.cs:52:            return ReadValidatedCount(reader.ReadInteger(), reader.Remaining, collectionName, minimumBytesPerItem);
+src/Messaging/Messages/Server/ExcludedSearchPhrasesNotification.cs:53:            for (int i = 0; i < count; i++)
+src/Messaging/Messages/Server/ConnectToPeerResponse.cs:153:            var ipBytes = reader.ReadBytes(4);
+src/Messaging/Messages/Server/ConnectToPeerResponse.cs:157:            var port = reader.ReadInteger();
+src/Messaging/Messages/Server/ConnectToPeerResponse.cs:160:            var token = reader.ReadInteger();
+src/Messaging/Messages/Server/ConnectToPeerResponse.cs:170:                obfuscationType = reader.ReadInteger();
+src/Messaging/Messages/Server/ConnectToPeerResponse.cs:171:                obfuscatedPort = reader.ReadInteger();
+src/Network/ListenerHandler.cs:100:                    var obfuscatedMessage = new byte[8 + length];
+src/Network/DistributedConnectionManager.cs:706:            while (!ChildConnectionDictionary.IsEmpty)
+src/Network/DistributedConnectionManager.cs:1037:            while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
+src/Network/DistributedConnectionManager.cs:1046:            while (true)
+src/Network/DistributedConnectionManager.cs:1085:                    while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
+src/Messaging/Messages/Peer/PlaceInQueueResponse.cs:77:            var placeInQueue = reader.ReadInteger();
 src/Network/PeerConnectionManager.cs:252:            while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
 src/Network/PeerConnectionManager.cs:504:                while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
 src/Network/PeerConnectionManager.cs:719:            while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
@@ -544,144 +553,93 @@ src/Network/PeerConnectionManager.cs:728:            while (true)
 src/Network/PeerConnectionManager.cs:744:                    var tokenBytes = new byte[4];
 src/Network/PeerConnectionManager.cs:758:                    while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
 src/Network/PeerConnectionManager.cs:794:            while (!MessageConnectionDictionary.IsEmpty)
-src/Messaging/Messages/Server/ItemSimilarUsersResponse.cs:52:            for (int i = 0; i < count; i++)
-src/Messaging/Messages/Server/ExcludedSearchPhrasesNotification.cs:53:            for (int i = 0; i < count; i++)
-src/Messaging/Messages/Server/ItemRecommendationsResponse.cs:52:            for (int i = 0; i < count; i++)
-src/Messaging/Messages/Server/ItemRecommendationsResponse.cs:54:                recommendations.Add(new Recommendation(reader.ReadString(), reader.ReadInteger()));
-src/Network/DistributedConnectionManager.cs:706:            while (!ChildConnectionDictionary.IsEmpty)
-src/Network/DistributedConnectionManager.cs:1037:            while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
-src/Network/DistributedConnectionManager.cs:1046:            while (true)
-src/Network/DistributedConnectionManager.cs:1085:                    while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
-src/Messaging/MessageReader.cs:148:        public byte[] ReadBytes(int count)
-src/Messaging/MessageReader.cs:195:        public int ReadInteger()
-src/Messaging/MessageReader.cs:215:        public long ReadLong()
-src/Messaging/MessageReader.cs:256:            var length = ReadInteger();
-src/Messaging/MessageReader.cs:311:                byte[] buffer = new byte[2000];
-src/Messaging/MessageReader.cs:314:                while ((len = input.Read(buffer, 0, 2000)) > 0)
-src/Messaging/Messages/Server/SimilarUsersResponse.cs:51:            for (int i = 0; i < count; i++)
-src/Messaging/Messages/Server/SimilarUsersResponse.cs:53:                users.Add(new SimilarUser(reader.ReadString(), reader.ReadInteger()));
-src/Messaging/Messages/Server/ConnectToPeerResponse.cs:153:            var ipBytes = reader.ReadBytes(4);
-src/Messaging/Messages/Server/ConnectToPeerResponse.cs:157:            var port = reader.ReadInteger();
-src/Messaging/Messages/Server/ConnectToPeerResponse.cs:160:            var token = reader.ReadInteger();
-src/Messaging/Messages/Server/ConnectToPeerResponse.cs:170:                obfuscationType = reader.ReadInteger();
-src/Messaging/Messages/Server/ConnectToPeerResponse.cs:171:                obfuscatedPort = reader.ReadInteger();
-src/Messaging/Messages/Server/UserInterestsResponse.cs:60:            for (int i = 0; i < count; i++)
-src/Network/ListenerHandler.cs:100:                    var obfuscatedMessage = new byte[8 + length];
-src/Messaging/Messages/Server/RecommendationsResponse.cs:59:            for (int i = 0; i < count; i++)
-src/Messaging/Messages/Server/RecommendationsResponse.cs:61:                recommendations.Add(new Recommendation(reader.ReadString(), reader.ReadInteger()));
-src/Messaging/MessageReaderExtensions.cs:50:            var size = reader.ReadLong();
-src/Messaging/MessageReaderExtensions.cs:73:            for (int i = 0; i < attributeCount; i++)
-src/Messaging/MessageReaderExtensions.cs:75:                var type = (FileAttributeType)reader.ReadInteger();
-src/Messaging/MessageReaderExtensions.cs:76:                var value = reader.ReadInteger();
-src/Messaging/MessageReaderExtensions.cs:106:            for (int i = 0; i < count; i++)
-src/Messaging/MessageBuilder.cs:251:                byte[] buffer = new byte[2000];
-src/Messaging/MessageBuilder.cs:254:                while ((len = input.Read(buffer, 0, 2000)) > 0)
-src/Messaging/Messages/Server/WatchUserResponse.cs:86:                var status = (UserPresence)reader.ReadInteger();
-src/Messaging/Messages/Server/WatchUserResponse.cs:89:                var averageSpeed = reader.ReadInteger();
-src/Messaging/Messages/Server/WatchUserResponse.cs:90:                var downloadCount = reader.ReadLong();
-src/Messaging/Messages/Server/WatchUserResponse.cs:91:                var fileCount = reader.ReadInteger();
-src/Messaging/Messages/Server/WatchUserResponse.cs:92:                var directoryCount = reader.ReadInteger();
-src/Messaging/Messages/Server/UserStatusResponseFactory.cs:49:            var presence = (UserPresence)reader.ReadInteger();
-src/Messaging/Messages/Distributed/DistributedBranchLevel.cs:69:            var level = reader.ReadInteger();
-src/Messaging/Messages/Server/RoomListResponseFactory.cs:70:            for (int i = 0; i < userCountCount; i++)
-src/Messaging/Messages/Server/RoomListResponseFactory.cs:72:                var count = reader.ReadInteger();
-src/Messaging/Messages/Server/RoomListResponseFactory.cs:85:            for (int i = 0; i < roomCount; i++)
-src/Messaging/Messages/Distributed/DistributedChildDepth.cs:69:            var depth = reader.ReadInteger();
-src/Messaging/Messages/Distributed/DistributedSearchRequest.cs:79:            reader.ReadInteger();
-src/Messaging/Messages/Distributed/DistributedSearchRequest.cs:82:            var token = reader.ReadInteger();
-src/Messaging/Messages/Server/UserStatisticsResponseFactory.cs:49:            var averageSpeed = reader.ReadInteger();
-src/Messaging/Messages/Server/UserStatisticsResponseFactory.cs:50:            var uploadCount = reader.ReadLong();
-src/Messaging/Messages/Server/UserStatisticsResponseFactory.cs:51:            var fileCount = reader.ReadInteger();
-src/Messaging/Messages/Server/UserStatisticsResponseFactory.cs:52:            var directoryCount = reader.ReadInteger();
-src/Network/MessageConnection.cs:216:                while (!Disposed)
-src/Network/MessageConnection.cs:351:            var encoded = new byte[8 + length];
-src/Messaging/Messages/Distributed/DistributedPingResponse.cs:68:                token = reader.ReadInteger();
 src/Messaging/Messages/Peer/PeerSearchRequest.cs:69:            var token = reader.ReadInteger();
+src/Messaging/Messages/Server/CannotConnect.cs:71:            var token = reader.ReadInteger();
 src/Messaging/Messages/Peer/BrowseResponseFactory.cs:57:            for (int i = 0; i < directoryCount; i++)
 src/Messaging/Messages/Peer/BrowseResponseFactory.cs:64:                _ = reader.ReadInteger();
 src/Messaging/Messages/Peer/BrowseResponseFactory.cs:70:                    for (int i = 0; i < lockedDirectoryCount; i++)
-src/Messaging/Messages/Server/PrivilegedUserListNotification.cs:53:            for (int i = 0; i < count; i++)
-src/Messaging/Messages/Peer/PlaceInQueueResponse.cs:77:            var placeInQueue = reader.ReadInteger();
-src/Messaging/Messages/Server/UserJoinedRoomNotification.cs:79:            var status = (UserPresence)reader.ReadInteger();
-src/Messaging/Messages/Server/UserJoinedRoomNotification.cs:82:            var averageSpeed = reader.ReadInteger();
-src/Messaging/Messages/Server/UserJoinedRoomNotification.cs:83:            var downloadCount = reader.ReadLong();
-src/Messaging/Messages/Server/UserJoinedRoomNotification.cs:84:            var fileCount = reader.ReadInteger();
-src/Messaging/Messages/Server/UserJoinedRoomNotification.cs:85:            var directoryCount = reader.ReadInteger();
-src/Messaging/Messages/Server/UserJoinedRoomNotification.cs:86:            var slotsFree = reader.ReadInteger();
-src/Messaging/Messages/Server/PrivateMessageNotification.cs:92:            var id = reader.ReadInteger();
-src/Messaging/Messages/Server/PrivateMessageNotification.cs:94:            var timestampSeconds = reader.ReadInteger();
-src/Messaging/Messages/Server/PrivilegeNotification.cs:72:            var id = reader.ReadInteger();
-src/Messaging/Messages/Peer/SearchResponseFactory.cs:55:            var token = reader.ReadInteger();
-src/Messaging/Messages/Peer/SearchResponseFactory.cs:61:            var uploadSpeed = reader.ReadInteger();
-src/Messaging/Messages/Peer/SearchResponseFactory.cs:62:            var queueLength = reader.ReadInteger();
-src/Messaging/Messages/Peer/SearchResponseFactory.cs:70:                _ = reader.ReadInteger();
-src/Messaging/Messages/Peer/TransferResponse.cs:115:            var token = reader.ReadInteger();
-src/Messaging/Messages/Peer/TransferResponse.cs:123:                var fileSize = reader.ReadLong();
-src/Messaging/Messages/Server/PrivateRoomUserListNotification.cs:55:            for (int i = 0; i < userCount; i++)
-src/Messaging/Messages/Initialization/PeerInit.cs:84:                var token = reader.ReadInteger();
-src/Messaging/Messages/Initialization/PierceFirewall.cs:68:                var token = reader.ReadInteger();
-src/Messaging/Messages/Server/UserAddressResponse.cs:129:            var ipBytes = reader.ReadBytes(4);
-src/Messaging/Messages/Server/UserAddressResponse.cs:133:            var port = reader.ReadInteger();
-src/Messaging/Messages/Server/UserAddressResponse.cs:141:                obfuscationType = reader.ReadInteger();
-src/Messaging/Messages/Server/UserAddressResponse.cs:144:                obfuscatedPort = BinaryPrimitives.ReadUInt16LittleEndian(reader.ReadBytes(2));
-src/Messaging/Messages/Peer/TransferRequest.cs:97:            var direction = (TransferDirection)reader.ReadInteger();
-src/Messaging/Messages/Peer/TransferRequest.cs:100:            var token = reader.ReadInteger();
-src/Messaging/Messages/Peer/TransferRequest.cs:107:                fileSize = reader.ReadLong();
-src/Messaging/Messages/Server/PrivateRoomOwnedListNotification.cs:55:            for (int i = 0; i < userCount; i++)
-src/Messaging/Messages/Server/NetInfoNotification.cs:116:            for (int i = 0; i < parentCount; i++)
-src/Messaging/Messages/Server/NetInfoNotification.cs:120:                var ipBytes = reader.ReadBytes(4);
-src/Messaging/Messages/Server/NetInfoNotification.cs:124:                var port = reader.ReadInteger();
-src/Messaging/Messages/Peer/FolderContentsResponse.cs:104:            var token = reader.ReadInteger();
-src/Messaging/Messages/Peer/FolderContentsResponse.cs:109:            for (int i = 0; i < directoryCount; i++)
-src/Messaging/Messages/Peer/FolderContentsRequest.cs:71:            var token = reader.ReadInteger();
-src/Messaging/Messages/Server/LoginResponse.cs:111:                var ipBytes = reader.ReadBytes(4);
-src/Messaging/Messages/Server/RoomTickerListNotification.cs:104:            for (int i = 0; i < tickerCount; i++)
-src/Messaging/Messages/Server/ServerSearchRequest.cs:81:            var token = reader.ReadInteger();
+src/Network/MessageConnection.cs:216:                while (!Disposed)
+src/Network/MessageConnection.cs:351:            var encoded = new byte[8 + length];
+src/Messaging/MessageBuilder.cs:251:                byte[] buffer = new byte[2000];
+src/Messaging/MessageBuilder.cs:254:                while ((len = input.Read(buffer, 0, 2000)) > 0)
+src/Messaging/Messages/Server/ProtocolCountReader.cs:40:            return ReadValidatedCount(reader.ReadInteger(), reader.Remaining, collectionName, minimumBytesPerItem);
+src/Messaging/Messages/Server/ProtocolCountReader.cs:52:            return ReadValidatedCount(reader.ReadInteger(), reader.Remaining, collectionName, minimumBytesPerItem);
+src/Messaging/Messages/Server/ItemSimilarUsersResponse.cs:52:            for (int i = 0; i < count; i++)
 src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:62:                var pictureLen = reader.ReadInteger();
 src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:76:                picture = reader.ReadBytes(pictureLen);
 src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:79:            var uploadSlots = reader.ReadInteger();
 src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:80:            var queueLength = reader.ReadInteger();
-src/Messaging/Compression/Inflate.cs:170:			while (true)
-src/Messaging/Compression/Inflate.cs:407:			while (n != 0 && m < 4)
-src/Messaging/Compression/ZOutputStream.cs:59:			buf = new byte[bufsize];
-src/Messaging/Compression/ZOutputStream.cs:101:		protected internal byte[] buf, buf1 = new byte[1];
-src/Messaging/Compression/ZOutputStream.cs:138:			byte[] b = new byte[b1.Length];
-src/Messaging/Compression/ZOutputStream.cs:156:			while (z.avail_in > 0 || z.avail_out == 0);
-src/Messaging/Compression/ZOutputStream.cs:182:			while (z.avail_in > 0 || z.avail_out == 0);
-src/Messaging/Compression/ZInputStream.cs:58:			buf = new byte[bufsize];
-src/Messaging/Compression/ZInputStream.cs:95:		protected byte[] buf, buf1 = new byte[1];
-src/Messaging/Compression/ZInputStream.cs:167:			while (z.avail_out == len && err == zlibConst.Z_OK);
-src/Messaging/Compression/ZInputStream.cs:177:			byte[] tmp = new byte[len];
-src/Messaging/Compression/InfTree.cs:126:			while (i != 0);
-src/Messaging/Compression/InfTree.cs:175:			while (--i != 0)
-src/Messaging/Compression/InfTree.cs:193:			while (++i < n);
-src/Messaging/Compression/InfTree.cs:209:				while (a-- != 0)
-src/Messaging/Compression/InfTree.cs:213:					while (k > w + l)
-src/Messaging/Compression/InfTree.cs:228:								while (++j < z)
-src/Messaging/Compression/InfTree.cs:295:					while ((i & mask) != x[h])
-src/Messaging/Compression/Tree.cs:180:				while (s.bl_count[bits] == 0)
-src/Messaging/Compression/Tree.cs:189:			while (overflow > 0);
-src/Messaging/Compression/Tree.cs:194:				while (n != 0)
-src/Messaging/Compression/Tree.cs:247:			while (s.heap_len < 2)
-src/Messaging/Compression/Tree.cs:289:			while (s.heap_len >= 2);
-src/Messaging/Compression/Tree.cs:350:			while (--len > 0);
-src/Messaging/Compression/SupportClass.cs:115:			byte[] receiver = new byte[target.Length];
-src/Messaging/Compression/InfCodes.cs:146:			while (true)
-src/Messaging/Compression/InfCodes.cs:180:						while (k < (j))
-src/Messaging/Compression/InfCodes.cs:245:						while (k < (j))
-src/Messaging/Compression/InfCodes.cs:275:						while (k < (j))
-src/Messaging/Compression/InfCodes.cs:325:						while (k < (j))
-src/Messaging/Compression/InfCodes.cs:351:						while (f < 0)
-src/Messaging/Compression/InfCodes.cs:356:						while (len != 0)
-src/Messaging/Compression/InfCodes.cs:519:				while (k < (20))
-src/Messaging/Compression/InfCodes.cs:550:						while (k < (15))
-src/Messaging/Compression/InfCodes.cs:571:								while (k < (e))
-src/Messaging/Compression/InfCodes.cs:608:									while (r < 0); // covers invalid distances
-src/Messaging/Compression/InfCodes.cs:620:											while (--e != 0);
-src/Messaging/Compression/InfCodes.cs:638:									while (--c != 0);
-src/Messaging/Compression/InfCodes.cs:666:						while (true);
-src/Messaging/Compression/InfCodes.cs:708:				while (true);
-src/Messaging/Compression/InfCodes.cs:710:			while (m >= 258 && n >= 10);
+src/Messaging/Messages/Peer/FolderContentsResponse.cs:104:            var token = reader.ReadInteger();
+src/Messaging/Messages/Peer/FolderContentsResponse.cs:109:            for (int i = 0; i < directoryCount; i++)
+src/Messaging/Messages/Server/ItemRecommendationsResponse.cs:52:            for (int i = 0; i < count; i++)
+src/Messaging/Messages/Server/ItemRecommendationsResponse.cs:54:                recommendations.Add(new Recommendation(reader.ReadString(), reader.ReadInteger()));
+src/Messaging/Messages/Peer/TransferResponse.cs:115:            var token = reader.ReadInteger();
+src/Messaging/Messages/Peer/TransferResponse.cs:123:                var fileSize = reader.ReadLong();
+src/Messaging/Messages/Server/ServerSearchRequest.cs:81:            var token = reader.ReadInteger();
+src/Messaging/MessageReaderExtensions.cs:50:            var size = reader.ReadLong();
+src/Messaging/MessageReaderExtensions.cs:73:            for (int i = 0; i < attributeCount; i++)
+src/Messaging/MessageReaderExtensions.cs:75:                var type = ProtocolValueValidator.ToDefinedEnum<FileAttributeType>(reader.ReadInteger(), "file attribute type");
+src/Messaging/MessageReaderExtensions.cs:76:                var value = reader.ReadInteger();
+src/Messaging/MessageReaderExtensions.cs:105:            for (int i = 0; i < count; i++)
+src/Messaging/Messages/Server/SimilarUsersResponse.cs:51:            for (int i = 0; i < count; i++)
+src/Messaging/Messages/Server/SimilarUsersResponse.cs:53:                users.Add(new SimilarUser(reader.ReadString(), reader.ReadInteger()));
+src/Messaging/Messages/Server/WatchUserResponse.cs:86:                var status = ProtocolValueValidator.ToDefinedEnum<UserPresence>(reader.ReadInteger(), "user presence");
+src/Messaging/Messages/Server/WatchUserResponse.cs:88:                var averageSpeed = reader.ReadInteger();
+src/Messaging/Messages/Server/WatchUserResponse.cs:89:                var downloadCount = reader.ReadLong();
+src/Messaging/Messages/Server/WatchUserResponse.cs:90:                var fileCount = reader.ReadInteger();
+src/Messaging/Messages/Server/WatchUserResponse.cs:91:                var directoryCount = reader.ReadInteger();
+src/Messaging/MessageReader.cs:148:        public byte[] ReadBytes(int count)
+src/Messaging/MessageReader.cs:195:        public int ReadInteger()
+src/Messaging/MessageReader.cs:215:        public long ReadLong()
+src/Messaging/MessageReader.cs:256:            var length = ValidateSliceBounds(ReadInteger(), Payload.Length - Position);
+src/Messaging/MessageReader.cs:316:                byte[] buffer = new byte[2000];
+src/Messaging/MessageReader.cs:319:                while ((len = input.Read(buffer, 0, 2000)) > 0)
+src/Messaging/Messages/Server/RoomTickerListNotification.cs:104:            for (int i = 0; i < tickerCount; i++)
+src/Messaging/Messages/Peer/TransferRequest.cs:97:            var direction = ProtocolValueValidator.ToDefinedEnum<TransferDirection>(reader.ReadInteger(), "transfer direction");
+src/Messaging/Messages/Peer/TransferRequest.cs:99:            var token = reader.ReadInteger();
+src/Messaging/Messages/Peer/TransferRequest.cs:106:                fileSize = reader.ReadLong();
+src/Messaging/Messages/Server/UserStatusResponseFactory.cs:49:            var presence = ProtocolValueValidator.ToDefinedEnum<UserPresence>(reader.ReadInteger(), "user presence");
+src/Messaging/Messages/Server/UserInterestsResponse.cs:60:            for (int i = 0; i < count; i++)
+src/Messaging/Messages/Server/UserStatisticsResponseFactory.cs:49:            var averageSpeed = reader.ReadInteger();
+src/Messaging/Messages/Server/UserStatisticsResponseFactory.cs:50:            var uploadCount = reader.ReadLong();
+src/Messaging/Messages/Server/UserStatisticsResponseFactory.cs:51:            var fileCount = reader.ReadInteger();
+src/Messaging/Messages/Server/UserStatisticsResponseFactory.cs:52:            var directoryCount = reader.ReadInteger();
+src/Messaging/Messages/Server/PrivateRoomOwnedListNotification.cs:55:            for (int i = 0; i < userCount; i++)
+src/Messaging/Messages/Server/UserJoinedRoomNotification.cs:79:            var status = ProtocolValueValidator.ToDefinedEnum<UserPresence>(reader.ReadInteger(), "user presence");
+src/Messaging/Messages/Server/UserJoinedRoomNotification.cs:81:            var averageSpeed = reader.ReadInteger();
+src/Messaging/Messages/Server/UserJoinedRoomNotification.cs:82:            var downloadCount = reader.ReadLong();
+src/Messaging/Messages/Server/UserJoinedRoomNotification.cs:83:            var fileCount = reader.ReadInteger();
+src/Messaging/Messages/Server/UserJoinedRoomNotification.cs:84:            var directoryCount = reader.ReadInteger();
+src/Messaging/Messages/Server/UserJoinedRoomNotification.cs:85:            var slotsFree = reader.ReadInteger();
+src/Messaging/Messages/Server/RecommendationsResponse.cs:59:            for (int i = 0; i < count; i++)
+src/Messaging/Messages/Server/RecommendationsResponse.cs:61:                recommendations.Add(new Recommendation(reader.ReadString(), reader.ReadInteger()));
+src/Messaging/Messages/Server/RoomListResponseFactory.cs:70:            for (int i = 0; i < userCountCount; i++)
+src/Messaging/Messages/Server/RoomListResponseFactory.cs:72:                var count = reader.ReadInteger();
+src/Messaging/Messages/Server/RoomListResponseFactory.cs:85:            for (int i = 0; i < roomCount; i++)
+src/Messaging/Messages/Initialization/PierceFirewall.cs:68:                var token = reader.ReadInteger();
+src/Messaging/Messages/Server/PrivilegedUserListNotification.cs:53:            for (int i = 0; i < count; i++)
+src/Messaging/Messages/Peer/SearchResponseFactory.cs:55:            var token = reader.ReadInteger();
+src/Messaging/Messages/Peer/SearchResponseFactory.cs:61:            var uploadSpeed = reader.ReadInteger();
+src/Messaging/Messages/Peer/SearchResponseFactory.cs:62:            var queueLength = reader.ReadInteger();
+src/Messaging/Messages/Peer/SearchResponseFactory.cs:70:                _ = reader.ReadInteger();
+src/Messaging/Messages/Initialization/PeerInit.cs:84:                var token = reader.ReadInteger();
+src/Messaging/Messages/Server/PrivateMessageNotification.cs:92:            var id = reader.ReadInteger();
+src/Messaging/Messages/Server/PrivateMessageNotification.cs:94:            var timestampSeconds = reader.ReadInteger();
+src/Messaging/Messages/Server/PrivilegeNotification.cs:72:            var id = reader.ReadInteger();
+src/Messaging/Messages/Server/PrivateRoomUserListNotification.cs:55:            for (int i = 0; i < userCount; i++)
+src/Messaging/Messages/Server/UserAddressResponse.cs:129:            var ipBytes = reader.ReadBytes(4);
+src/Messaging/Messages/Server/UserAddressResponse.cs:133:            var port = reader.ReadInteger();
+src/Messaging/Messages/Server/UserAddressResponse.cs:141:                obfuscationType = reader.ReadInteger();
+src/Messaging/Messages/Server/UserAddressResponse.cs:144:                obfuscatedPort = BinaryPrimitives.ReadUInt16LittleEndian(reader.ReadBytes(2));
+src/Messaging/Messages/Server/LoginResponse.cs:111:                var ipBytes = reader.ReadBytes(4);
+src/Messaging/Messages/Server/NetInfoNotification.cs:116:            for (int i = 0; i < parentCount; i++)
+src/Messaging/Messages/Server/NetInfoNotification.cs:120:                var ipBytes = reader.ReadBytes(4);
+src/Messaging/Messages/Server/NetInfoNotification.cs:124:                var port = reader.ReadInteger();
+src/Messaging/Messages/Distributed/DistributedBranchLevel.cs:69:            var level = reader.ReadInteger();
+src/Messaging/Messages/Distributed/DistributedChildDepth.cs:69:            var depth = reader.ReadInteger();
+src/Messaging/Messages/Distributed/DistributedPingResponse.cs:68:                token = reader.ReadInteger();
+src/Messaging/Messages/Distributed/DistributedSearchRequest.cs:79:            reader.ReadInteger();
+src/Messaging/Messages/Distributed/DistributedSearchRequest.cs:82:            var token = reader.ReadInteger();
 src/Messaging/Compression/InfBlocks.cs:113:			window = new byte[w];
 src/Messaging/Compression/InfBlocks.cs:160:			while (true)
 src/Messaging/Compression/InfBlocks.cs:167:						while (k < (3))
@@ -694,6 +652,32 @@ src/Messaging/Compression/InfBlocks.cs:435:						while (true)
 src/Messaging/Compression/InfBlocks.cs:448:							while (k < (t))
 src/Messaging/Compression/InfBlocks.cs:487:								while (k < (t + i))
 src/Messaging/Compression/InfBlocks.cs:533:								while (--j != 0);
+src/Messaging/Messages/Peer/FolderContentsRequest.cs:71:            var token = reader.ReadInteger();
+src/Messaging/Compression/ZOutputStream.cs:59:			buf = new byte[bufsize];
+src/Messaging/Compression/ZOutputStream.cs:101:		protected internal byte[] buf, buf1 = new byte[1];
+src/Messaging/Compression/ZOutputStream.cs:138:			byte[] b = new byte[b1.Length];
+src/Messaging/Compression/ZOutputStream.cs:156:			while (z.avail_in > 0 || z.avail_out == 0);
+src/Messaging/Compression/ZOutputStream.cs:182:			while (z.avail_in > 0 || z.avail_out == 0);
+src/Messaging/Compression/ZInputStream.cs:58:			buf = new byte[bufsize];
+src/Messaging/Compression/ZInputStream.cs:95:		protected byte[] buf, buf1 = new byte[1];
+src/Messaging/Compression/ZInputStream.cs:167:			while (z.avail_out == len && err == zlibConst.Z_OK);
+src/Messaging/Compression/ZInputStream.cs:177:			byte[] tmp = new byte[len];
+src/Messaging/Compression/Inflate.cs:170:			while (true)
+src/Messaging/Compression/Inflate.cs:407:			while (n != 0 && m < 4)
+src/Messaging/Compression/Tree.cs:180:				while (s.bl_count[bits] == 0)
+src/Messaging/Compression/Tree.cs:189:			while (overflow > 0);
+src/Messaging/Compression/Tree.cs:194:				while (n != 0)
+src/Messaging/Compression/Tree.cs:247:			while (s.heap_len < 2)
+src/Messaging/Compression/Tree.cs:289:			while (s.heap_len >= 2);
+src/Messaging/Compression/Tree.cs:350:			while (--len > 0);
+src/Messaging/Compression/SupportClass.cs:115:			byte[] receiver = new byte[target.Length];
+src/Messaging/Compression/InfTree.cs:126:			while (i != 0);
+src/Messaging/Compression/InfTree.cs:175:			while (--i != 0)
+src/Messaging/Compression/InfTree.cs:193:			while (++i < n);
+src/Messaging/Compression/InfTree.cs:209:				while (a-- != 0)
+src/Messaging/Compression/InfTree.cs:213:					while (k > w + l)
+src/Messaging/Compression/InfTree.cs:228:								while (++j < z)
+src/Messaging/Compression/InfTree.cs:295:					while ((i & mask) != x[h])
 src/Messaging/Compression/Adler32.cs:74:			while (len > 0)
 src/Messaging/Compression/Adler32.cs:78:				while (k >= 16)
 src/Messaging/Compression/Adler32.cs:104:					while (--k != 0);
@@ -721,172 +705,121 @@ src/Messaging/Compression/Deflate.cs:1430:			while ((cur_match = (prev[cur_match
 src/Messaging/Compression/Deflate.cs:1485:			window = new byte[w_size * 2];
 src/Messaging/Compression/Deflate.cs:1493:			pending_buf = new byte[lit_bufsize * 4];
 src/Messaging/Compression/Deflate.cs:1757:							for (int i = 0; i < hash_size; i++)
+src/Messaging/Compression/InfCodes.cs:146:			while (true)
+src/Messaging/Compression/InfCodes.cs:180:						while (k < (j))
+src/Messaging/Compression/InfCodes.cs:245:						while (k < (j))
+src/Messaging/Compression/InfCodes.cs:275:						while (k < (j))
+src/Messaging/Compression/InfCodes.cs:325:						while (k < (j))
+src/Messaging/Compression/InfCodes.cs:351:						while (f < 0)
+src/Messaging/Compression/InfCodes.cs:356:						while (len != 0)
+src/Messaging/Compression/InfCodes.cs:519:				while (k < (20))
+src/Messaging/Compression/InfCodes.cs:550:						while (k < (15))
+src/Messaging/Compression/InfCodes.cs:571:								while (k < (e))
+src/Messaging/Compression/InfCodes.cs:608:									while (r < 0); // covers invalid distances
+src/Messaging/Compression/InfCodes.cs:620:											while (--e != 0);
+src/Messaging/Compression/InfCodes.cs:638:									while (--c != 0);
+src/Messaging/Compression/InfCodes.cs:666:						while (true);
+src/Messaging/Compression/InfCodes.cs:708:				while (true);
+src/Messaging/Compression/InfCodes.cs:710:			while (m >= 258 && n >= 10);
 
 ## Protocol counted collection loops
-src/Messaging/MessageReaderExtensions.cs:70:            var attributeCount = ProtocolCountReader.ReadCount(reader, "file attribute", minimumBytesPerItem: 8);
-src/Messaging/MessageReaderExtensions.cs:73:            for (int i = 0; i < attributeCount; i++)
-src/Messaging/MessageReaderExtensions.cs:102:        internal static IReadOnlyCollection<File> ReadFiles(this MessageReader<MessageCode.Peer> reader, int count)
-src/Messaging/MessageReaderExtensions.cs:106:            for (int i = 0; i < count; i++)
-src/Messaging/MessageReaderExtensions.cs:122:            var fileCount = ProtocolCountReader.ReadCount(reader, "directory file", minimumBytesPerItem: 4);
-src/Messaging/MessageReaderExtensions.cs:126:            for (int j = 0; j < fileCount; j++)
-src/Messaging/Messages/Server/ExcludedSearchPhrasesNotification.cs:50:            var count = ProtocolCountReader.ReadCount(reader, "excluded search phrase", minimumBytesPerItem: 4);
-src/Messaging/Messages/Server/ExcludedSearchPhrasesNotification.cs:53:            for (int i = 0; i < count; i++)
 src/Messaging/Messages/Server/JoinRoomResponse.cs:52:            var userCount = ProtocolCountReader.ReadCount(reader, "room user", minimumBytesPerItem: 4);
 src/Messaging/Messages/Server/JoinRoomResponse.cs:55:            for (int i = 0; i < userCount; i++)
 src/Messaging/Messages/Server/JoinRoomResponse.cs:60:            var statusCount = ProtocolCountReader.ReadCount(reader, "room user status", minimumBytesPerItem: 4);
 src/Messaging/Messages/Server/JoinRoomResponse.cs:64:            for (int i = 0; i < statusCount; i++)
-src/Messaging/Messages/Server/JoinRoomResponse.cs:70:            var dataCount = ProtocolCountReader.ReadCount(reader, "room user data", minimumBytesPerItem: 20);
-src/Messaging/Messages/Server/JoinRoomResponse.cs:74:            for (int i = 0; i < dataCount; i++)
-src/Messaging/Messages/Server/JoinRoomResponse.cs:89:            var slotsFreeCount = ProtocolCountReader.ReadCount(reader, "room user slot", minimumBytesPerItem: 4);
-src/Messaging/Messages/Server/JoinRoomResponse.cs:93:            for (int i = 0; i < slotsFreeCount; i++)
-src/Messaging/Messages/Server/JoinRoomResponse.cs:100:            var countryCount = ProtocolCountReader.ReadCount(reader, "room user country", minimumBytesPerItem: 4);
-src/Messaging/Messages/Server/JoinRoomResponse.cs:104:            for (int i = 0; i < countryCount; i++)
-src/Messaging/Messages/Server/JoinRoomResponse.cs:111:            for (int i = 0; i < userCount; i++)
-src/Messaging/Messages/Server/JoinRoomResponse.cs:129:                operatorCount = ProtocolCountReader.ReadCount(reader, "room operator", minimumBytesPerItem: 4);
-src/Messaging/Messages/Server/JoinRoomResponse.cs:132:                for (int i = 0; i < operatorCount; i++)
+src/Messaging/Messages/Server/JoinRoomResponse.cs:69:            var dataCount = ProtocolCountReader.ReadCount(reader, "room user data", minimumBytesPerItem: 20);
+src/Messaging/Messages/Server/JoinRoomResponse.cs:73:            for (int i = 0; i < dataCount; i++)
+src/Messaging/Messages/Server/JoinRoomResponse.cs:88:            var slotsFreeCount = ProtocolCountReader.ReadCount(reader, "room user slot", minimumBytesPerItem: 4);
+src/Messaging/Messages/Server/JoinRoomResponse.cs:92:            for (int i = 0; i < slotsFreeCount; i++)
+src/Messaging/Messages/Server/JoinRoomResponse.cs:99:            var countryCount = ProtocolCountReader.ReadCount(reader, "room user country", minimumBytesPerItem: 4);
+src/Messaging/Messages/Server/JoinRoomResponse.cs:103:            for (int i = 0; i < countryCount; i++)
+src/Messaging/Messages/Server/JoinRoomResponse.cs:110:            for (int i = 0; i < userCount; i++)
+src/Messaging/Messages/Server/JoinRoomResponse.cs:128:                operatorCount = ProtocolCountReader.ReadCount(reader, "room operator", minimumBytesPerItem: 4);
+src/Messaging/Messages/Server/JoinRoomResponse.cs:131:                for (int i = 0; i < operatorCount; i++)
+src/Messaging/Messages/Server/ExcludedSearchPhrasesNotification.cs:50:            var count = ProtocolCountReader.ReadCount(reader, "excluded search phrase", minimumBytesPerItem: 4);
+src/Messaging/Messages/Server/ExcludedSearchPhrasesNotification.cs:53:            for (int i = 0; i < count; i++)
 src/Messaging/Messages/Server/ItemSimilarUsersResponse.cs:49:            var count = ProtocolCountReader.ReadCount(reader, "item similar user", minimumBytesPerItem: 4);
 src/Messaging/Messages/Server/ItemSimilarUsersResponse.cs:52:            for (int i = 0; i < count; i++)
-src/Messaging/Messages/Server/NetInfoNotification.cs:113:            var parentCount = ProtocolCountReader.ReadCount(reader, "distributed parent", minimumBytesPerItem: 12);
-src/Messaging/Messages/Server/NetInfoNotification.cs:116:            for (int i = 0; i < parentCount; i++)
+src/Messaging/Messages/Server/RoomTickerListNotification.cs:101:            var tickerCount = ProtocolCountReader.ReadCount(reader, "room ticker", minimumBytesPerItem: 8);
+src/Messaging/Messages/Server/RoomTickerListNotification.cs:104:            for (int i = 0; i < tickerCount; i++)
 src/Messaging/Messages/Server/ItemRecommendationsResponse.cs:49:            var count = ProtocolCountReader.ReadCount(reader, "item recommendation", minimumBytesPerItem: 8);
 src/Messaging/Messages/Server/ItemRecommendationsResponse.cs:52:            for (int i = 0; i < count; i++)
-src/Messaging/Messages/Server/SimilarUsersResponse.cs:48:            var count = ProtocolCountReader.ReadCount(reader, "similar user", minimumBytesPerItem: 8);
-src/Messaging/Messages/Server/SimilarUsersResponse.cs:51:            for (int i = 0; i < count; i++)
 src/Messaging/Messages/Server/UserInterestsResponse.cs:57:            var count = ProtocolCountReader.ReadCount(reader, "interest", minimumBytesPerItem: 4);
 src/Messaging/Messages/Server/UserInterestsResponse.cs:60:            for (int i = 0; i < count; i++)
 src/Messaging/Messages/Server/RecommendationsResponse.cs:56:            var count = ProtocolCountReader.ReadCount(reader, "recommendation", minimumBytesPerItem: 8);
 src/Messaging/Messages/Server/RecommendationsResponse.cs:59:            for (int i = 0; i < count; i++)
-src/Messaging/Messages/Peer/FolderContentsResponse.cs:106:            var directoryCount = ProtocolCountReader.ReadCount(reader, "directory", minimumBytesPerItem: 4); // directory count, should always be 1
-src/Messaging/Messages/Peer/FolderContentsResponse.cs:109:            for (int i = 0; i < directoryCount; i++)
-src/Messaging/Messages/Server/RoomTickerListNotification.cs:101:            var tickerCount = ProtocolCountReader.ReadCount(reader, "room ticker", minimumBytesPerItem: 8);
-src/Messaging/Messages/Server/RoomTickerListNotification.cs:104:            for (int i = 0; i < tickerCount; i++)
-src/Messaging/Messages/Peer/SearchResponseFactory.cs:56:            var fileCount = ProtocolCountReader.ReadCount(reader, "file", minimumBytesPerItem: 4);
-src/Messaging/Messages/Peer/SearchResponseFactory.cs:77:                var count = ProtocolCountReader.ReadCount(reader, "locked file", minimumBytesPerItem: 4);
-src/Messaging/Messages/Peer/SearchResponseFactory.cs:78:                lockedFileList = reader.ReadFiles(count);
-src/Messaging/Messages/Server/PrivilegedUserListNotification.cs:50:            var count = ProtocolCountReader.ReadCount(reader, "privileged user", minimumBytesPerItem: 4);
-src/Messaging/Messages/Server/PrivilegedUserListNotification.cs:53:            for (int i = 0; i < count; i++)
+src/Messaging/Messages/Server/SimilarUsersResponse.cs:48:            var count = ProtocolCountReader.ReadCount(reader, "similar user", minimumBytesPerItem: 8);
+src/Messaging/Messages/Server/SimilarUsersResponse.cs:51:            for (int i = 0; i < count; i++)
 src/Messaging/Messages/Server/RoomListResponseFactory.cs:66:            var userCountCount = ProtocolCountReader.ReadCount(reader, "room user count", minimumBytesPerItem: 4);
 src/Messaging/Messages/Server/RoomListResponseFactory.cs:70:            for (int i = 0; i < userCountCount; i++)
 src/Messaging/Messages/Server/RoomListResponseFactory.cs:82:            var roomCount = ProtocolCountReader.ReadCount(reader, "room name", minimumBytesPerItem: 4);
 src/Messaging/Messages/Server/RoomListResponseFactory.cs:85:            for (int i = 0; i < roomCount; i++)
-src/Messaging/Messages/Server/PrivateRoomOwnedListNotification.cs:51:            var userCount = ProtocolCountReader.ReadCount(reader, "owned private room user", minimumBytesPerItem: 4);
-src/Messaging/Messages/Server/PrivateRoomOwnedListNotification.cs:55:            for (int i = 0; i < userCount; i++)
+src/Messaging/MessageReaderExtensions.cs:70:            var attributeCount = ProtocolCountReader.ReadCount(reader, "file attribute", minimumBytesPerItem: 8);
+src/Messaging/MessageReaderExtensions.cs:73:            for (int i = 0; i < attributeCount; i++)
+src/Messaging/MessageReaderExtensions.cs:101:        internal static IReadOnlyCollection<File> ReadFiles(this MessageReader<MessageCode.Peer> reader, int count)
+src/Messaging/MessageReaderExtensions.cs:105:            for (int i = 0; i < count; i++)
+src/Messaging/MessageReaderExtensions.cs:121:            var fileCount = ProtocolCountReader.ReadCount(reader, "directory file", minimumBytesPerItem: 4);
+src/Messaging/MessageReaderExtensions.cs:125:            for (int j = 0; j < fileCount; j++)
+src/Messaging/Messages/Server/PrivilegedUserListNotification.cs:50:            var count = ProtocolCountReader.ReadCount(reader, "privileged user", minimumBytesPerItem: 4);
+src/Messaging/Messages/Server/PrivilegedUserListNotification.cs:53:            for (int i = 0; i < count; i++)
+src/Messaging/Messages/Server/NetInfoNotification.cs:113:            var parentCount = ProtocolCountReader.ReadCount(reader, "distributed parent", minimumBytesPerItem: 12);
+src/Messaging/Messages/Server/NetInfoNotification.cs:116:            for (int i = 0; i < parentCount; i++)
 src/Messaging/Messages/Server/PrivateRoomUserListNotification.cs:51:            var userCount = ProtocolCountReader.ReadCount(reader, "private room user", minimumBytesPerItem: 4);
 src/Messaging/Messages/Server/PrivateRoomUserListNotification.cs:55:            for (int i = 0; i < userCount; i++)
 src/Messaging/Messages/Peer/BrowseResponseFactory.cs:53:            var directoryCount = ProtocolCountReader.ReadCount(reader, "directory", minimumBytesPerItem: 4);
 src/Messaging/Messages/Peer/BrowseResponseFactory.cs:57:            for (int i = 0; i < directoryCount; i++)
 src/Messaging/Messages/Peer/BrowseResponseFactory.cs:68:                    var lockedDirectoryCount = ProtocolCountReader.ReadCount(reader, "locked directory", minimumBytesPerItem: 4);
 src/Messaging/Messages/Peer/BrowseResponseFactory.cs:70:                    for (int i = 0; i < lockedDirectoryCount; i++)
+src/Messaging/Messages/Peer/SearchResponseFactory.cs:56:            var fileCount = ProtocolCountReader.ReadCount(reader, "file", minimumBytesPerItem: 4);
+src/Messaging/Messages/Peer/SearchResponseFactory.cs:77:                var count = ProtocolCountReader.ReadCount(reader, "locked file", minimumBytesPerItem: 4);
+src/Messaging/Messages/Peer/SearchResponseFactory.cs:78:                lockedFileList = reader.ReadFiles(count);
+src/Messaging/Messages/Server/PrivateRoomOwnedListNotification.cs:51:            var userCount = ProtocolCountReader.ReadCount(reader, "owned private room user", minimumBytesPerItem: 4);
+src/Messaging/Messages/Server/PrivateRoomOwnedListNotification.cs:55:            for (int i = 0; i < userCount; i++)
+src/Messaging/Messages/Peer/FolderContentsResponse.cs:106:            var directoryCount = ProtocolCountReader.ReadCount(reader, "directory", minimumBytesPerItem: 4); // directory count, should always be 1
+src/Messaging/Messages/Peer/FolderContentsResponse.cs:109:            for (int i = 0; i < directoryCount; i++)
 
 ## Protocol length-prefixed reads and payload allocations
 src/Network/MessageConnection.cs:351:            var encoded = new byte[8 + length];
 src/Network/ListenerHandler.cs:100:                    var obfuscatedMessage = new byte[8 + length];
-src/Network/Tcp/RotatedObfuscation.cs:65:            var output = new byte[4 + input.Length];
-src/Network/Tcp/RotatedObfuscation.cs:85:            var output = new byte[input.Length - 4];
-src/Network/Tcp/ObfuscatedTransferConnection.cs:137:            var output = new byte[checked((int)length)];
-src/Network/Tcp/ObfuscatedTransferConnection.cs:278:            var frame = new byte[FrameLengthBytes + payload.Length];
-src/Network/Tcp/ObfuscatedTransferConnection.cs:295:            var encoded = new byte[8 + length];
-src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:62:                var pictureLen = reader.ReadInteger();
 src/Messaging/MessageReader.cs:148:        public byte[] ReadBytes(int count)
 src/Messaging/MessageReader.cs:242:            return ReadStringAndEncoding(encoding).Value;
 src/Messaging/MessageReader.cs:254:        public (string Value, CharacterEncoding Encoding) ReadStringAndEncoding(CharacterEncoding encoding = null)
-src/Messaging/MessageReader.cs:256:            var length = ReadInteger();
+src/Network/Tcp/ObfuscatedTransferConnection.cs:137:            var output = new byte[checked((int)length)];
+src/Network/Tcp/ObfuscatedTransferConnection.cs:278:            var frame = new byte[FrameLengthBytes + payload.Length];
+src/Network/Tcp/ObfuscatedTransferConnection.cs:295:            var encoded = new byte[8 + length];
+src/Network/Tcp/RotatedObfuscation.cs:65:            var output = new byte[4 + input.Length];
+src/Network/Tcp/RotatedObfuscation.cs:85:            var output = new byte[input.Length - 4];
+src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:62:                var pictureLen = reader.ReadInteger();
 
 ## Protocol compression boundary candidates
 src/Messaging/MessageReader.cs:46:        internal const int MaximumDecompressedPayloadLength = 64 * 1024 * 1024;
 src/Messaging/MessageReader.cs:103:        public MessageReader<T> Decompress()
 src/Messaging/MessageReader.cs:115:            Decompress(Payload.ToArray(), out byte[] decompressedPayload);
-src/Messaging/MessageReader.cs:307:        private void Decompress(byte[] inData, out byte[] outData)
-src/Messaging/MessageReader.cs:324:                using var outMemoryStream = new BoundedMemoryStream(MaximumDecompressedPayloadLength);
-src/Messaging/MessageReader.cs:349:        private sealed class BoundedMemoryStream : MemoryStream
-src/Messaging/MessageReader.cs:351:            public BoundedMemoryStream(int maximumLength)
+src/Messaging/MessageReader.cs:312:        private void Decompress(byte[] inData, out byte[] outData)
+src/Messaging/MessageReader.cs:329:                using var outMemoryStream = new BoundedMemoryStream(MaximumDecompressedPayloadLength);
+src/Messaging/MessageReader.cs:354:        private sealed class BoundedMemoryStream : MemoryStream
+src/Messaging/MessageReader.cs:356:            public BoundedMemoryStream(int maximumLength)
+src/Messaging/Messages/Peer/BrowseResponseFactory.cs:51:            reader.Decompress();
+src/Messaging/Messages/Peer/SearchResponseFactory.cs:52:            reader.Decompress();
+src/Messaging/Messages/Peer/FolderContentsResponse.cs:102:            reader.Decompress();
 src/Messaging/Compression/ZOutputStream.cs:59:			buf = new byte[bufsize];
-src/Messaging/Compression/InfBlocks.cs:113:			window = new byte[w];
 src/Messaging/Compression/ZInputStream.cs:58:			buf = new byte[bufsize];
 src/Messaging/Compression/ZInputStream.cs:177:			byte[] tmp = new byte[len];
-src/Messaging/Messages/Peer/FolderContentsResponse.cs:102:            reader.Decompress();
-src/Messaging/Messages/Peer/SearchResponseFactory.cs:52:            reader.Decompress();
-src/Messaging/Messages/Peer/BrowseResponseFactory.cs:51:            reader.Decompress();
+src/Messaging/Compression/InfBlocks.cs:113:			window = new byte[w];
 src/Messaging/Compression/Deflate.cs:1485:			window = new byte[w_size * 2];
 src/Messaging/Compression/Deflate.cs:1493:			pending_buf = new byte[lit_bufsize * 4];
 
 ## Protocol scalar emission candidates
-src/Messaging/Messages/Server/WishlistSearchRequest.cs:64:                .WriteInteger(Token)
-src/Messaging/Messages/Server/WishlistSearchRequest.cs:65:                .WriteString(SearchText)
-src/Messaging/Compression/ZOutputStream.cs:122:		public  void  WriteByte(int b)
-src/Messaging/Compression/ZOutputStream.cs:128:		public override  void  WriteByte(byte b)
-src/Messaging/Compression/ZOutputStream.cs:130:			WriteByte((int) b);
-src/Messaging/Messages/Server/UserSearchRequest.cs:71:                .WriteString(Username)
-src/Messaging/Messages/Server/UserSearchRequest.cs:72:                .WriteInteger(Token)
-src/Messaging/Messages/Server/UserSearchRequest.cs:73:                .WriteString(SearchText)
-src/Messaging/Messages/Server/SearchRequest.cs:64:                .WriteInteger(Token)
-src/Messaging/Messages/Server/SearchRequest.cs:65:                .WriteString(SearchText)
-src/Messaging/Messages/Server/RoomSearchRequest.cs:71:                .WriteString(RoomName)
-src/Messaging/Messages/Server/RoomSearchRequest.cs:72:                .WriteInteger(Token)
-src/Messaging/Messages/Server/RoomSearchRequest.cs:73:                .WriteString(SearchText)
-src/Messaging/Messages/Server/LoginRequest.cs:84:                .WriteString(Username)
-src/Messaging/Messages/Server/LoginRequest.cs:85:                .WriteString(Password)
-src/Messaging/Messages/Server/LoginRequest.cs:86:                .WriteInteger(Version)
-src/Messaging/Messages/Server/LoginRequest.cs:87:                .WriteString(Hash)
-src/Messaging/Messages/Server/LoginRequest.cs:88:                .WriteInteger(MinorVersion)
-src/Messaging/Messages/Server/ConnectToPeerRequest.cs:71:                .WriteInteger(Token)
-src/Messaging/Messages/Server/ConnectToPeerRequest.cs:72:                .WriteString(Username)
-src/Messaging/Messages/Server/ConnectToPeerRequest.cs:73:                .WriteString(Type)
-src/Messaging/Messages/Server/CannotConnect.cs:93:                .WriteInteger(Token);
-src/Messaging/Messages/Server/CannotConnect.cs:97:                builder.WriteString(Username);
-src/Messaging/Messages/Server/MessageUsersCommand.cs:71:                .WriteInteger(Usernames.Count);
-src/Messaging/Messages/Server/MessageUsersCommand.cs:75:                builder.WriteString(username);
-src/Messaging/Messages/Server/MessageUsersCommand.cs:79:                .WriteString(Message)
-src/Messaging/Messages/Server/ItemRecommendationsRequest.cs:65:                .WriteString(Item)
-src/Messaging/Messages/Server/UserInterestsRequest.cs:53:                .WriteString(Username)
-src/Messaging/Messages/Server/PrivateRoomToggle.cs:78:                .WriteByte((byte)(AcceptInvitations ? 1 : 0))
-src/Messaging/Messages/Server/InterestCommand.cs:60:                .WriteString(Item)
-src/Messaging/Messages/Peer/TransferResponse.cs:149:                .WriteInteger(Token)
-src/Messaging/Messages/Peer/TransferResponse.cs:150:                .WriteByte((byte)(IsAllowed ? 1 : 0));
-src/Messaging/Messages/Peer/TransferResponse.cs:154:                builder.WriteLong(FileSize);
-src/Messaging/Messages/Peer/TransferResponse.cs:158:                builder.WriteString(Message);
-src/Messaging/Messages/Server/PrivateRoomRemoveUser.cs:81:                .WriteString(RoomName)
-src/Messaging/Messages/Server/PrivateRoomRemoveUser.cs:82:                .WriteString(Username)
-src/Messaging/Messages/Server/WatchUserRequest.cs:53:                .WriteString(Username)
-src/Messaging/Messages/Server/PrivateRoomRemoveOperator.cs:81:                .WriteString(RoomName)
-src/Messaging/Messages/Server/PrivateRoomRemoveOperator.cs:82:                .WriteString(Username)
-src/Messaging/Messages/Peer/TransferRequest.cs:126:                .WriteInteger((int)Direction)
-src/Messaging/Messages/Peer/TransferRequest.cs:127:                .WriteInteger(Token)
-src/Messaging/Messages/Peer/TransferRequest.cs:128:                .WriteString(Filename)
-src/Messaging/Messages/Peer/TransferRequest.cs:129:                .WriteLong(FileSize)
-src/Messaging/Messages/Server/UserStatusRequest.cs:53:                .WriteString(Username)
-src/Messaging/Messages/Server/PrivateRoomDropOwnershipCommand.cs:53:                .WriteString(RoomName)
-src/Messaging/Messages/Peer/FolderContentsResponse.cs:125:                .WriteInteger(Token)
-src/Messaging/Messages/Peer/FolderContentsResponse.cs:126:                .WriteString(DirectoryName)
-src/Messaging/Messages/Peer/FolderContentsResponse.cs:127:                .WriteInteger(DirectoryCount);
-src/Messaging/Messages/Peer/FolderContentsRequest.cs:85:                .WriteInteger(Token)
-src/Messaging/Messages/Peer/FolderContentsRequest.cs:86:                .WriteString(DirectoryName)
-src/Messaging/Messages/Server/PrivateRoomDropMembershipCommand.cs:53:                .WriteString(RoomName)
-src/Messaging/Messages/Server/UserStatisticsRequest.cs:53:                .WriteString(Username)
-src/Messaging/Messages/Server/UserPrivilegesRequest.cs:53:                .WriteString(Username)
-src/Messaging/Messages/Server/PrivateRoomAddUser.cs:81:                .WriteString(RoomName)
-src/Messaging/Messages/Server/PrivateRoomAddUser.cs:82:                .WriteString(Username)
-src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:101:                .WriteString(userInfo.Description)
-src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:102:                .WriteByte((byte)(userInfo.HasPicture ? 1 : 0));
-src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:107:                    .WriteInteger(userInfo.Picture.Length)
-src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:108:                    .WriteBytes(userInfo.Picture);
-src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:112:                .WriteInteger(userInfo.UploadSlots)
-src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:113:                .WriteInteger(userInfo.QueueLength)
-src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:114:                .WriteByte((byte)(userInfo.HasFreeUploadSlot ? 1 : 0));
-src/Messaging/Messages/Server/PrivateRoomAddOperator.cs:81:                .WriteString(RoomName)
-src/Messaging/Messages/Server/PrivateRoomAddOperator.cs:82:                .WriteString(Username)
-src/Messaging/Messages/Peer/UploadFailed.cs:73:                .WriteString(Filename)
-src/Messaging/Messages/Server/PrivateMessageCommand.cs:60:                .WriteString(Username)
-src/Messaging/Messages/Server/PrivateMessageCommand.cs:61:                .WriteString(Message)
-src/Messaging/Messages/Peer/UploadDenied.cs:81:                .WriteString(Filename)
-src/Messaging/Messages/Peer/UploadDenied.cs:82:                .WriteString(Message)
-src/Messaging/Messages/Server/ParentsIPCommand.cs:66:                .WriteBytes(ipBytes)
-src/Messaging/Messages/EmbeddedMessage.cs:77:                .WriteBytes(bytes.Skip(9).ToArray())
-src/Messaging/MessageReader.cs:364:            public override void WriteByte(byte value)
-src/Messaging/MessageReader.cs:367:                base.WriteByte(value);
-src/Messaging/Messages/Server/GivePrivilegesCommand.cs:69:                .WriteString(Username)
-src/Messaging/Messages/Server/GivePrivilegesCommand.cs:70:                .WriteInteger(Days)
-src/Messaging/Messages/Server/NewPassword.cs:73:                .WriteString(Password)
+src/Messaging/Messages/Distributed/DistributedSearchRequest.cs:96:                .WriteInteger(0)
+src/Messaging/Messages/Distributed/DistributedSearchRequest.cs:97:                .WriteString(Username)
+src/Messaging/Messages/Distributed/DistributedSearchRequest.cs:98:                .WriteInteger(Token)
+src/Messaging/Messages/Distributed/DistributedSearchRequest.cs:99:                .WriteString(Query)
+src/Messaging/Messages/Distributed/DistributedPingResponse.cs:82:                .WriteInteger(Token)
+src/Messaging/Messages/Distributed/DistributedChildDepth.cs:83:                .WriteInteger(Depth)
+src/Messaging/Messages/Distributed/DistributedBranchRoot.cs:73:                .WriteString(Username)
+src/Messaging/Messages/Distributed/DistributedBranchLevel.cs:83:                .WriteInteger(Level)
+src/Messaging/MessageReader.cs:369:            public override void WriteByte(byte value)
+src/Messaging/MessageReader.cs:372:                base.WriteByte(value);
 src/Messaging/MessageBuilderExtensions.cs:47:                .WriteByte((byte)file.Code)
 src/Messaging/MessageBuilderExtensions.cs:48:                .WriteString(file.Filename)
 src/Messaging/MessageBuilderExtensions.cs:49:                .WriteLong(file.Size)
@@ -896,7 +829,6 @@ src/Messaging/MessageBuilderExtensions.cs:56:                    .WriteInteger((
 src/Messaging/MessageBuilderExtensions.cs:57:                    .WriteInteger(attribute.Value);
 src/Messaging/MessageBuilderExtensions.cs:74:                .WriteString(directory.Name)
 src/Messaging/MessageBuilderExtensions.cs:75:                .WriteInteger(directory.FileCount);
-src/Messaging/Messages/Server/UserAddressRequest.cs:53:                .WriteString(Username)
 src/Messaging/MessageBuilder.cs:99:        public MessageBuilder WriteByte(byte value)
 src/Messaging/MessageBuilder.cs:101:            return WriteBytes(new[] { value });
 src/Messaging/MessageBuilder.cs:112:        public MessageBuilder WriteBytes(byte[] bytes)
@@ -907,45 +839,108 @@ src/Messaging/MessageBuilder.cs:203:            return WriteBytes(BitConverter.G
 src/Messaging/MessageBuilder.cs:219:        public MessageBuilder WriteString(string value, CharacterEncoding encoding = null)
 src/Messaging/MessageBuilder.cs:243:            return WriteBytes(BitConverter.GetBytes(bytes.Length))
 src/Messaging/MessageBuilder.cs:244:                .WriteBytes(bytes);
-src/Messaging/Messages/Server/ChildDepthCommand.cs:62:                .WriteInteger(Depth)
-src/Messaging/Messages/Distributed/DistributedChildDepth.cs:83:                .WriteInteger(Depth)
+src/Messaging/Messages/Server/WishlistSearchRequest.cs:64:                .WriteInteger(Token)
+src/Messaging/Messages/Server/WishlistSearchRequest.cs:65:                .WriteString(SearchText)
+src/Messaging/Messages/Server/UserAddressRequest.cs:53:                .WriteString(Username)
+src/Messaging/Messages/Server/UserSearchRequest.cs:71:                .WriteString(Username)
+src/Messaging/Messages/Server/UserSearchRequest.cs:72:                .WriteInteger(Token)
+src/Messaging/Messages/Server/UserSearchRequest.cs:73:                .WriteString(SearchText)
+src/Messaging/Compression/ZOutputStream.cs:122:		public  void  WriteByte(int b)
+src/Messaging/Compression/ZOutputStream.cs:128:		public override  void  WriteByte(byte b)
+src/Messaging/Compression/ZOutputStream.cs:130:			WriteByte((int) b);
 src/Messaging/Messages/Server/LeaveRoomRequest.cs:53:                .WriteString(RoomName)
+src/Messaging/Messages/Server/SearchRequest.cs:64:                .WriteInteger(Token)
+src/Messaging/Messages/Server/SearchRequest.cs:65:                .WriteString(SearchText)
 src/Messaging/Messages/Server/UnwatchUserCommand.cs:53:                .WriteString(Username)
-src/Messaging/Messages/Distributed/DistributedSearchRequest.cs:96:                .WriteInteger(0)
-src/Messaging/Messages/Distributed/DistributedSearchRequest.cs:97:                .WriteString(Username)
-src/Messaging/Messages/Distributed/DistributedSearchRequest.cs:98:                .WriteInteger(Token)
-src/Messaging/Messages/Distributed/DistributedSearchRequest.cs:99:                .WriteString(Query)
-src/Messaging/Messages/Distributed/DistributedBranchRoot.cs:73:                .WriteString(Username)
+src/Messaging/Messages/Server/AcknowledgePrivateMessageCommand.cs:62:                .WriteInteger(Id)
+src/Messaging/Messages/Server/RoomSearchRequest.cs:71:                .WriteString(RoomName)
+src/Messaging/Messages/Server/RoomSearchRequest.cs:72:                .WriteInteger(Token)
+src/Messaging/Messages/Server/RoomSearchRequest.cs:73:                .WriteString(SearchText)
+src/Messaging/Messages/Server/AcceptChildrenCommand.cs:53:                .WriteByte((byte)(Accepted ? 1 : 0))
+src/Messaging/Messages/Server/LoginRequest.cs:84:                .WriteString(Username)
+src/Messaging/Messages/Server/LoginRequest.cs:85:                .WriteString(Password)
+src/Messaging/Messages/Server/LoginRequest.cs:86:                .WriteInteger(Version)
+src/Messaging/Messages/Server/LoginRequest.cs:87:                .WriteString(Hash)
+src/Messaging/Messages/Server/LoginRequest.cs:88:                .WriteInteger(MinorVersion)
 src/Messaging/Messages/Server/JoinRoomRequest.cs:60:                .WriteString(RoomName)
 src/Messaging/Messages/Server/JoinRoomRequest.cs:61:                .WriteInteger(IsPrivate ? 1 : 0)
-src/Messaging/Messages/Distributed/DistributedBranchLevel.cs:83:                .WriteInteger(Level)
-src/Messaging/Messages/Server/HaveNoParentsCommand.cs:53:                .WriteByte((byte)(HaveNoParents ? 1 : 0))
-src/Messaging/Messages/Distributed/DistributedPingResponse.cs:82:                .WriteInteger(Token)
-src/Messaging/Messages/Peer/PlaceInQueueRequest.cs:73:                .WriteString(Filename)
-src/Messaging/Messages/Server/RoomMessageCommand.cs:60:                .WriteString(RoomName)
-src/Messaging/Messages/Server/RoomMessageCommand.cs:61:                .WriteString(Message)
-src/Messaging/Messages/Peer/PlaceInQueueResponse.cs:92:                .WriteString(Filename)
-src/Messaging/Messages/Peer/PlaceInQueueResponse.cs:93:                .WriteInteger(PlaceInQueue)
-src/Messaging/Messages/Peer/BrowseResponseFactory.cs:89:                .WriteInteger(browseResponse.DirectoryCount);
-src/Messaging/Messages/Peer/BrowseResponseFactory.cs:96:            builder.WriteInteger(0);
-src/Messaging/Messages/Peer/BrowseResponseFactory.cs:97:            builder.WriteInteger(browseResponse.LockedDirectoryCount);
+src/Messaging/Messages/Server/ConnectToPeerRequest.cs:71:                .WriteInteger(Token)
+src/Messaging/Messages/Server/ConnectToPeerRequest.cs:72:                .WriteString(Username)
+src/Messaging/Messages/Server/ConnectToPeerRequest.cs:73:                .WriteString(Type)
+src/Messaging/Messages/Server/CannotConnect.cs:93:                .WriteInteger(Token);
+src/Messaging/Messages/Server/CannotConnect.cs:97:                builder.WriteString(Username);
 src/Messaging/Messages/Server/SetSharedCountsCommand.cs:74:                .WriteInteger(DirectoryCount)
 src/Messaging/Messages/Server/SetSharedCountsCommand.cs:75:                .WriteInteger(FileCount)
-src/Messaging/Messages/Server/AcceptChildrenCommand.cs:53:                .WriteByte((byte)(Accepted ? 1 : 0))
-src/Messaging/Messages/Server/AcknowledgePrivateMessageCommand.cs:62:                .WriteInteger(Id)
+src/Messaging/Messages/Server/HaveNoParentsCommand.cs:53:                .WriteByte((byte)(HaveNoParents ? 1 : 0))
 src/Messaging/Messages/Server/SetRoomTickerCommand.cs:60:                .WriteString(RoomName)
 src/Messaging/Messages/Server/SetRoomTickerCommand.cs:61:                .WriteString(Message)
-src/Messaging/Messages/Server/SendUploadSpeedCommand.cs:62:                .WriteInteger(Speed)
+src/Messaging/Messages/Server/MessageUsersCommand.cs:71:                .WriteInteger(Usernames.Count);
+src/Messaging/Messages/Server/MessageUsersCommand.cs:75:                builder.WriteString(username);
+src/Messaging/Messages/Server/MessageUsersCommand.cs:79:                .WriteString(Message)
+src/Messaging/Messages/Server/PrivateRoomAddUser.cs:81:                .WriteString(RoomName)
+src/Messaging/Messages/Server/PrivateRoomAddUser.cs:82:                .WriteString(Username)
 src/Messaging/Messages/Server/SetOnlineStatusCommand.cs:62:                .WriteInteger((int)Status)
-src/Messaging/Messages/Server/BranchLevelCommand.cs:62:                .WriteInteger(Level)
-src/Messaging/Messages/Server/AcknowledgePrivilegeNotificationCommand.cs:62:                .WriteInteger(Id)
+src/Messaging/Messages/Server/GivePrivilegesCommand.cs:69:                .WriteString(Username)
+src/Messaging/Messages/Server/GivePrivilegesCommand.cs:70:                .WriteInteger(Days)
 src/Messaging/Messages/Server/SetListenPortCommand.cs:93:                .WriteInteger(Port);
 src/Messaging/Messages/Server/SetListenPortCommand.cs:98:                    .WriteInteger(ObfuscationType.Value)
 src/Messaging/Messages/Server/SetListenPortCommand.cs:99:                    .WriteInteger(ObfuscatedPort.Value);
+src/Messaging/Messages/Server/ItemRecommendationsRequest.cs:65:                .WriteString(Item)
+src/Messaging/Messages/Server/NewPassword.cs:73:                .WriteString(Password)
+src/Messaging/Messages/Server/PrivateRoomAddOperator.cs:81:                .WriteString(RoomName)
+src/Messaging/Messages/Server/PrivateRoomAddOperator.cs:82:                .WriteString(Username)
+src/Messaging/Messages/Server/UserInterestsRequest.cs:53:                .WriteString(Username)
+src/Messaging/Messages/Server/SendUploadSpeedCommand.cs:62:                .WriteInteger(Speed)
+src/Messaging/Messages/Server/PrivateMessageCommand.cs:60:                .WriteString(Username)
+src/Messaging/Messages/Server/PrivateMessageCommand.cs:61:                .WriteString(Message)
+src/Messaging/Messages/Server/ParentsIPCommand.cs:66:                .WriteBytes(ipBytes)
+src/Messaging/Messages/Server/InterestCommand.cs:60:                .WriteString(Item)
+src/Messaging/Messages/Server/PrivateRoomToggle.cs:78:                .WriteByte((byte)(AcceptInvitations ? 1 : 0))
+src/Messaging/Messages/Peer/TransferResponse.cs:149:                .WriteInteger(Token)
+src/Messaging/Messages/Peer/TransferResponse.cs:150:                .WriteByte((byte)(IsAllowed ? 1 : 0));
+src/Messaging/Messages/Peer/TransferResponse.cs:154:                builder.WriteLong(FileSize);
+src/Messaging/Messages/Peer/TransferResponse.cs:158:                builder.WriteString(Message);
+src/Messaging/Messages/Initialization/PierceFirewall.cs:92:                .WriteInteger(Token)
+src/Messaging/Messages/Server/PrivateRoomRemoveUser.cs:81:                .WriteString(RoomName)
+src/Messaging/Messages/Server/PrivateRoomRemoveUser.cs:82:                .WriteString(Username)
+src/Messaging/Messages/Peer/TransferRequest.cs:125:                .WriteInteger((int)Direction)
+src/Messaging/Messages/Peer/TransferRequest.cs:126:                .WriteInteger(Token)
+src/Messaging/Messages/Peer/TransferRequest.cs:127:                .WriteString(Filename)
+src/Messaging/Messages/Peer/TransferRequest.cs:128:                .WriteLong(FileSize)
 src/Messaging/Messages/Initialization/PeerInit.cs:108:                .WriteString(Username)
 src/Messaging/Messages/Initialization/PeerInit.cs:109:                .WriteString(ConnectionType)
 src/Messaging/Messages/Initialization/PeerInit.cs:110:                .WriteInteger(Token)
-src/Messaging/Messages/Initialization/PierceFirewall.cs:92:                .WriteInteger(Token)
+src/Messaging/Messages/Server/WatchUserRequest.cs:53:                .WriteString(Username)
+src/Messaging/Messages/Server/PrivateRoomDropOwnershipCommand.cs:53:                .WriteString(RoomName)
+src/Messaging/Messages/Server/PrivateRoomRemoveOperator.cs:81:                .WriteString(RoomName)
+src/Messaging/Messages/Server/PrivateRoomRemoveOperator.cs:82:                .WriteString(Username)
+src/Messaging/Messages/Server/ChildDepthCommand.cs:62:                .WriteInteger(Depth)
+src/Messaging/Messages/Peer/FolderContentsResponse.cs:125:                .WriteInteger(Token)
+src/Messaging/Messages/Peer/FolderContentsResponse.cs:126:                .WriteString(DirectoryName)
+src/Messaging/Messages/Peer/FolderContentsResponse.cs:127:                .WriteInteger(DirectoryCount);
+src/Messaging/Messages/Server/PrivateRoomDropMembershipCommand.cs:53:                .WriteString(RoomName)
+src/Messaging/Messages/Server/RoomMessageCommand.cs:60:                .WriteString(RoomName)
+src/Messaging/Messages/Server/RoomMessageCommand.cs:61:                .WriteString(Message)
+src/Messaging/Messages/EmbeddedMessage.cs:77:                .WriteBytes(bytes.Skip(9).ToArray())
+src/Messaging/Messages/Peer/FolderContentsRequest.cs:85:                .WriteInteger(Token)
+src/Messaging/Messages/Peer/FolderContentsRequest.cs:86:                .WriteString(DirectoryName)
+src/Messaging/Messages/Peer/UploadDenied.cs:81:                .WriteString(Filename)
+src/Messaging/Messages/Peer/UploadDenied.cs:82:                .WriteString(Message)
+src/Messaging/Messages/Peer/PlaceInQueueResponse.cs:92:                .WriteString(Filename)
+src/Messaging/Messages/Peer/PlaceInQueueResponse.cs:93:                .WriteInteger(PlaceInQueue)
+src/Messaging/Messages/Peer/QueueDownloadRequest.cs:72:                .WriteString(Filename)
+src/Messaging/Messages/Server/UserStatusRequest.cs:53:                .WriteString(Username)
+src/Messaging/Messages/Peer/BrowseResponseFactory.cs:89:                .WriteInteger(browseResponse.DirectoryCount);
+src/Messaging/Messages/Peer/BrowseResponseFactory.cs:96:            builder.WriteInteger(0);
+src/Messaging/Messages/Peer/BrowseResponseFactory.cs:97:            builder.WriteInteger(browseResponse.LockedDirectoryCount);
+src/Messaging/Messages/Peer/PlaceInQueueRequest.cs:73:                .WriteString(Filename)
+src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:101:                .WriteString(userInfo.Description)
+src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:102:                .WriteByte((byte)(userInfo.HasPicture ? 1 : 0));
+src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:107:                    .WriteInteger(userInfo.Picture.Length)
+src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:108:                    .WriteBytes(userInfo.Picture);
+src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:112:                .WriteInteger(userInfo.UploadSlots)
+src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:113:                .WriteInteger(userInfo.QueueLength)
+src/Messaging/Messages/Peer/UserInfoResponseFactory.cs:114:                .WriteByte((byte)(userInfo.HasFreeUploadSlot ? 1 : 0));
 src/Messaging/Messages/Peer/SearchResponseFactory.cs:93:                .WriteString(searchResponse.Username)
 src/Messaging/Messages/Peer/SearchResponseFactory.cs:94:                .WriteInteger(searchResponse.Token)
 src/Messaging/Messages/Peer/SearchResponseFactory.cs:95:                .WriteInteger(searchResponse.FileCount);
@@ -955,7 +950,11 @@ src/Messaging/Messages/Peer/SearchResponseFactory.cs:105:                .WriteI
 src/Messaging/Messages/Peer/SearchResponseFactory.cs:106:                .WriteInteger(0); // unknown value included for compatibility
 src/Messaging/Messages/Peer/SearchResponseFactory.cs:108:            builder.WriteInteger(searchResponse.LockedFileCount);
 src/Messaging/Messages/Server/BranchRootCommand.cs:53:                .WriteString(Username)
-src/Messaging/Messages/Peer/QueueDownloadRequest.cs:72:                .WriteString(Filename)
+src/Messaging/Messages/Peer/UploadFailed.cs:73:                .WriteString(Filename)
+src/Messaging/Messages/Server/BranchLevelCommand.cs:62:                .WriteInteger(Level)
+src/Messaging/Messages/Server/UserPrivilegesRequest.cs:53:                .WriteString(Username)
+src/Messaging/Messages/Server/AcknowledgePrivilegeNotificationCommand.cs:62:                .WriteInteger(Id)
+src/Messaging/Messages/Server/UserStatisticsRequest.cs:53:                .WriteString(Username)
 
 ## Protocol scalar constructor guard candidates
 src/Messaging/Compression/ZInputStream.cs:111:public ZInputStream(System.IO.Stream in_Renamed, int level)
@@ -981,8 +980,8 @@ src/Messaging/MessageBuilder.cs:188:public MessageBuilder WriteInteger(int value
 src/Messaging/MessageBuilder.cs:201:public MessageBuilder WriteLong(long value)
 src/Messaging/MessageBuilder.cs:219:public MessageBuilder WriteString(string value, CharacterEncoding encoding = null)
 src/Messaging/MessageReader.cs:181:public bool HasRemainingBytes(int count)
-src/Messaging/MessageReader.cs:292:public void Seek(int position)
-src/Messaging/MessageReader.cs:351:public BoundedMemoryStream(int maximumLength)
+src/Messaging/MessageReader.cs:282:public void Seek(int position)
+src/Messaging/MessageReader.cs:356:public BoundedMemoryStream(int maximumLength)
 src/Messaging/Messages/Distributed/DistributedBranchLevel.cs:39:public DistributedBranchLevel(int level)
 src/Messaging/Messages/Distributed/DistributedChildDepth.cs:39:public DistributedChildDepth(int depth)
 src/Messaging/Messages/Distributed/DistributedPingResponse.cs:37:public DistributedPingResponse(int token)
@@ -1159,6 +1158,15 @@ src/Options/SoulseekClientOptionsPatch.cs:213:        public Func<string, IPEndP
 src/Options/SoulseekClientOptionsPatch.cs:282:        public Func<string, IPEndPoint, string, Task<int?>> PlaceInQueueResolver { get; }
 src/Options/SoulseekClientOptionsPatch.cs:292:        public Func<string, int, SearchQuery, Task<SearchResponse>> SearchResponseResolver { get; }
 src/Options/SoulseekClientOptionsPatch.cs:312:        public Func<string, IPEndPoint, Task<UserInfo>> UserInfoResolver { get; }
+src/Messaging/MessageReader.cs:314:            static void CopyStream(Stream input, Stream output)
+src/Messaging/MessageReader.cs:329:                using var outMemoryStream = new BoundedMemoryStream(MaximumDecompressedPayloadLength);
+src/Messaging/MessageReader.cs:330:                using var outZStream = new ZOutputStream(outMemoryStream);
+src/Messaging/MessageReader.cs:331:                using var inMemoryStream = new MemoryStream(inData);
+src/Messaging/MessageReader.cs:332:                CopyStream(inMemoryStream, outZStream);
+src/Messaging/MessageReader.cs:333:                outZStream.finish();
+src/Messaging/MessageReader.cs:334:                outData = outMemoryStream.ToArray();
+src/Messaging/MessageReader.cs:354:        private sealed class BoundedMemoryStream : MemoryStream
+src/Messaging/MessageReader.cs:356:            public BoundedMemoryStream(int maximumLength)
 src/Options/SoulseekClientOptions.cs:44:        private readonly Func<string, IPEndPoint, Task<BrowseResponse>> defaultBrowseResponseResolver =
 src/Options/SoulseekClientOptions.cs:50:        private readonly Func<string, IPEndPoint, string, Task<int?>> defaultPlaceInQueueResolver =
 src/Options/SoulseekClientOptions.cs:53:        private readonly Func<string, IPEndPoint, Task<UserInfo>> defaultUserInfoResolver =
@@ -1202,6 +1210,10 @@ src/Options/SoulseekClientOptions.cs:571:                browseResponseResolver:
 src/Options/SoulseekClientOptions.cs:572:                directoryContentsResolver: directoryContentsResolver ?? DirectoryContentsResolver,
 src/Options/SoulseekClientOptions.cs:573:                userInfoResolver: userInfoResolver ?? UserInfoResolver,
 src/Options/SoulseekClientOptions.cs:575:                placeInQueueResolver: placeInQueueResolver ?? PlaceInQueueResolver);
+src/Messaging/Messages/Server/PrivateRoomDropOwnershipCommand.cs:49:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/WishlistSearchRequest.cs:60:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/GivePrivilegesCommand.cs:65:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/PrivateRoomDropMembershipCommand.cs:49:        public byte[] ToByteArray()
 src/Messaging/MessageBuilder.cs:249:            static void CopyStream(Stream input, Stream output)
 src/Messaging/MessageBuilder.cs:264:                using MemoryStream outMemoryStream = new MemoryStream();
 src/Messaging/MessageBuilder.cs:265:                using ZOutputStream outZStream = new ZOutputStream(outMemoryStream, zlibConst.Z_DEFAULT_COMPRESSION);
@@ -1209,37 +1221,63 @@ src/Messaging/MessageBuilder.cs:266:                using Stream inMemoryStream 
 src/Messaging/MessageBuilder.cs:268:                CopyStream(inMemoryStream, outZStream);
 src/Messaging/MessageBuilder.cs:269:                outZStream.finish();
 src/Messaging/MessageBuilder.cs:270:                outData = outMemoryStream.ToArray();
-src/Messaging/Messages/Distributed/DistributedSearchRequest.cs:92:        public byte[] ToByteArray()
-src/Messaging/Messages/Distributed/DistributedPingResponse.cs:78:        public byte[] ToByteArray()
-src/Messaging/Messages/Distributed/DistributedPingRequest.cs:60:        public byte[] ToByteArray()
-src/Messaging/Messages/Distributed/DistributedChildDepth.cs:79:        public byte[] ToByteArray()
-src/Messaging/Messages/Distributed/DistributedBranchRoot.cs:69:        public byte[] ToByteArray()
-src/Messaging/Messages/Distributed/DistributedBranchLevel.cs:79:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/JoinRoomRequest.cs:56:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/HaveNoParentsCommand.cs:49:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/GivePrivilegesCommand.cs:65:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/ChildDepthCommand.cs:58:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/WishlistSearchRequest.cs:60:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/CheckPrivilegesRequest.cs:42:        public byte[] ToByteArray()
 src/Messaging/Messages/Server/UserSearchRequest.cs:67:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/PrivateRoomAddUser.cs:77:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/PrivateRoomAddOperator.cs:77:        public byte[] ToByteArray()
 src/Messaging/Messages/Server/SearchRequest.cs:60:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/ChildDepthCommand.cs:58:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/RoomSearchRequest.cs:67:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/PrivateMessageCommand.cs:56:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/CheckPrivilegesRequest.cs:42:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/ParentsIPCommand.cs:54:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/LoginRequest.cs:80:        public byte[] ToByteArray()
 src/Messaging/Messages/Server/BranchRootCommand.cs:49:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/NewPassword.cs:69:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/ConnectToPeerRequest.cs:67:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/BranchLevelCommand.cs:58:        public byte[] ToByteArray()
+src/Messaging/Compression/ZStreamException.cs:55:    internal class ZStreamException:System.IO.IOException
+src/Messaging/Compression/ZStreamException.cs:57:		public ZStreamException():base()
+src/Messaging/Compression/ZStreamException.cs:60:		public ZStreamException(System.String s):base(s)
+src/Messaging/Compression/ZStreamException.cs:63:        public ZStreamException(System.String s, Exception e):base(s, e)
+src/Messaging/Messages/Server/CannotConnect.cs:87:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/AcknowledgePrivilegeNotificationCommand.cs:58:        public byte[] ToByteArray()
+src/Messaging/Compression/ZStream.cs:54:    internal sealed class ZStream
+src/Messaging/Messages/Server/MessageUsersCommand.cs:67:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/AcknowledgePrivateMessageCommand.cs:58:        public byte[] ToByteArray()
+src/Messaging/Messages/Distributed/DistributedSearchRequest.cs:92:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/LeaveRoomRequest.cs:49:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/HaveNoParentsCommand.cs:49:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/ItemRecommendationsRequest.cs:61:        public byte[] ToByteArray()
+src/Messaging/Compression/ZOutputStream.cs:54:    internal class ZOutputStream:System.IO.Stream
+src/Messaging/Compression/ZOutputStream.cs:93:		protected internal ZStream z = new ZStream();
+src/Messaging/Compression/ZOutputStream.cs:104:		private System.IO.Stream out_Renamed;
+src/Messaging/Compression/ZOutputStream.cs:106:		public ZOutputStream(System.IO.Stream out_Renamed):base()
+src/Messaging/Compression/ZOutputStream.cs:114:		public ZOutputStream(System.IO.Stream out_Renamed, int level):base()
+src/Messaging/Compression/ZOutputStream.cs:153:					throw new ZStreamException((compress?"de":"in") + "flating: " + z.msg);
+src/Messaging/Compression/ZOutputStream.cs:176:					throw new ZStreamException((compress?"de":"in") + "flating: " + z.msg);
+src/Messaging/Messages/Server/JoinRoomRequest.cs:56:        public byte[] ToByteArray()
+src/Messaging/Messages/Distributed/DistributedPingResponse.cs:78:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/SimilarUsersRequest.cs:35:        public byte[] ToByteArray()
+src/Messaging/Messages/Distributed/DistributedPingRequest.cs:60:        public byte[] ToByteArray()
+src/Messaging/Compression/ZInputStream.cs:53:    internal class ZInputStream:System.IO.BinaryReader
+src/Messaging/Compression/ZInputStream.cs:92:		protected ZStream z = new ZStream();
+src/Messaging/Compression/ZInputStream.cs:98:		internal System.IO.Stream in_Renamed = null;
+src/Messaging/Compression/ZInputStream.cs:100:		public ZInputStream(System.IO.Stream in_Renamed):base(in_Renamed)
+src/Messaging/Compression/ZInputStream.cs:111:		public ZInputStream(System.IO.Stream in_Renamed, int level):base(in_Renamed)
+src/Messaging/Compression/ZInputStream.cs:163:					throw new ZStreamException((compress?"de":"in") + "flating: " + z.msg);
+src/Messaging/Compression/ZInputStream.cs:178:			return ((long) SupportClass.ReadInput(BaseStream, tmp, 0, tmp.Length));
+src/Messaging/Messages/Distributed/DistributedChildDepth.cs:79:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/RoomMessageCommand.cs:56:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/PrivateRoomToggle.cs:74:        public byte[] ToByteArray()
 src/Messaging/Compression/InfTree.cs:307:		internal static int inflate_trees_bits(int[] c, int[] bb, int[] tb, int[] hp, ZStream z)
 src/Messaging/Compression/InfTree.cs:327:		internal static int inflate_trees_dynamic(int nl, int nd, int[] c, int[] bl, int[] bd, int[] tl, int[] td, int[] hp, ZStream z)
 src/Messaging/Compression/InfTree.cs:374:		internal static int inflate_trees_fixed(int[] bl, int[] bd, int[][] tl, int[][] td, ZStream z)
-src/Messaging/Messages/Server/RoomSearchRequest.cs:67:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/BranchLevelCommand.cs:58:        public byte[] ToByteArray()
-src/Messaging/MessageReader.cs:309:            static void CopyStream(Stream input, Stream output)
-src/Messaging/MessageReader.cs:324:                using var outMemoryStream = new BoundedMemoryStream(MaximumDecompressedPayloadLength);
-src/Messaging/MessageReader.cs:325:                using var outZStream = new ZOutputStream(outMemoryStream);
-src/Messaging/MessageReader.cs:326:                using var inMemoryStream = new MemoryStream(inData);
-src/Messaging/MessageReader.cs:327:                CopyStream(inMemoryStream, outZStream);
-src/Messaging/MessageReader.cs:328:                outZStream.finish();
-src/Messaging/MessageReader.cs:329:                outData = outMemoryStream.ToArray();
-src/Messaging/MessageReader.cs:349:        private sealed class BoundedMemoryStream : MemoryStream
-src/Messaging/MessageReader.cs:351:            public BoundedMemoryStream(int maximumLength)
-src/Messaging/Messages/Server/LoginRequest.cs:80:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/AcknowledgePrivilegeNotificationCommand.cs:58:        public byte[] ToByteArray()
+src/Messaging/Messages/Distributed/DistributedBranchRoot.cs:69:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/PrivateRoomRemoveUser.cs:77:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/RoomListRequest.cs:42:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/PrivateRoomRemoveOperator.cs:77:        public byte[] ToByteArray()
+src/Messaging/Messages/Distributed/DistributedBranchLevel.cs:79:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/SetRoomTickerCommand.cs:56:        public byte[] ToByteArray()
 src/Messaging/Handlers/PeerMessageHandler.cs:151:                                .UserInfoResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
 src/Messaging/Handlers/PeerMessageHandler.cs:161:                                .UserInfoResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
 src/Messaging/Handlers/PeerMessageHandler.cs:166:                        await connection.WriteAsync(outgoingInfo.ToByteArray()).ConfigureAwait(false);
@@ -1265,51 +1303,49 @@ src/Messaging/Handlers/PeerMessageHandler.cs:494:                DisposeRawBrows
 src/Messaging/Handlers/PeerMessageHandler.cs:498:        private static async Task WriteRawSearchResponseAsync(IMessageConnection connection, RawSearchResponse rawSearchResponse)
 src/Messaging/Handlers/PeerMessageHandler.cs:501:            await connection.WriteAsync(rawSearchResponse.Length, rawSearchResponse.Stream).ConfigureAwait(false);
 src/Messaging/Handlers/PeerMessageHandler.cs:539:                placeInQueue = await SoulseekClient.Options.PlaceInQueueResolver(connection.Username, connection.IPEndPoint, filename).ConfigureAwait(false);
-src/Messaging/Messages/Server/AcknowledgePrivateMessageCommand.cs:58:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/ConnectToPeerRequest.cs:67:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/AcceptChildrenCommand.cs:49:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/ServerPing.cs:60:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/StopPublicChatCommand.cs:42:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/SetOnlineStatusCommand.cs:58:        public byte[] ToByteArray()
+src/Messaging/Compression/SupportClass.cs:103:		/// <summary>Reads a number of characters from the current source Stream and writes the data to the target array at the specified index.</summary>
+src/Messaging/Compression/SupportClass.cs:104:		/// <param name="sourceStream">The source Stream to read from.</param>
+src/Messaging/Compression/SupportClass.cs:105:		/// <param name="target">Contains the array of characteres read from the source Stream.</param>
+src/Messaging/Compression/SupportClass.cs:107:		/// <param name="count">The maximum number of characters to read from the source Stream.</param>
+src/Messaging/Compression/SupportClass.cs:108:		/// <returns>The number of characters read. The number will be less than or equal to count depending on the data available in the source Stream. Returns -1 if the end of the stream is reached.</returns>
+src/Messaging/Compression/SupportClass.cs:109:		public static System.Int32 ReadInput(System.IO.Stream sourceStream, byte[] target, int start, int count)
+src/Messaging/Compression/SupportClass.cs:116:			int bytesRead   = sourceStream.Read(receiver, start, count);
+src/Messaging/Messages/Server/SendUploadSpeedCommand.cs:58:        public byte[] ToByteArray()
 src/Messaging/Compression/InfCodes.cs:105:		internal InfCodes(int bl, int bd, int[] tl, int tl_index, int[] td, int td_index, ZStream z)
 src/Messaging/Compression/InfCodes.cs:116:		internal InfCodes(int bl, int bd, int[] tl, int[] td, ZStream z)
 src/Messaging/Compression/InfCodes.cs:127:		internal int proc(InfBlocks s, ZStream z, int r)
 src/Messaging/Compression/InfCodes.cs:478:		internal void  free(ZStream z)
 src/Messaging/Compression/InfCodes.cs:488:		internal int inflate_fast(int bl, int bd, int[] tl, int tl_index, int[] td, int td_index, InfBlocks s, ZStream z)
-src/Messaging/Messages/Server/CannotConnect.cs:87:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/MessageUsersCommand.cs:67:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/ServerPing.cs:60:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/StartPublicChatCommand.cs:42:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/SetListenPortCommand.cs:89:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/UserAddressRequest.cs:49:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/SetSharedCountsCommand.cs:70:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/UnwatchUserCommand.cs:49:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/InterestCommand.cs:56:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/UserStatusRequest.cs:49:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/WatchUserRequest.cs:49:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/RecommendationsRequest.cs:49:        public byte[] ToByteArray()
 src/Messaging/Compression/InfBlocks.cs:110:		internal InfBlocks(ZStream z, System.Object checkfn, int w)
 src/Messaging/Compression/InfBlocks.cs:120:		internal void  reset(ZStream z, long[] c)
 src/Messaging/Compression/InfBlocks.cs:141:		internal int proc(ZStream z, int r)
 src/Messaging/Compression/InfBlocks.cs:637:		internal void  free(ZStream z)
 src/Messaging/Compression/InfBlocks.cs:659:		internal int inflate_flush(ZStream z, int r)
-src/Messaging/Messages/Server/SendUploadSpeedCommand.cs:58:        public byte[] ToByteArray()
-src/Messaging/Messages/Peer/TransferResponse.cs:145:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/ItemRecommendationsRequest.cs:61:        public byte[] ToByteArray()
-src/Messaging/Messages/Peer/TransferRequest.cs:122:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/SimilarUsersRequest.cs:35:        public byte[] ToByteArray()
-src/Messaging/Messages/Peer/FolderContentsResponse.cs:121:        public byte[] ToByteArray()
 src/Messaging/Messages/Server/UserInterestsRequest.cs:49:        public byte[] ToByteArray()
-src/Messaging/Compression/ZStreamException.cs:55:    internal class ZStreamException:System.IO.IOException
-src/Messaging/Compression/ZStreamException.cs:57:		public ZStreamException():base()
-src/Messaging/Compression/ZStreamException.cs:60:		public ZStreamException(System.String s):base(s)
-src/Messaging/Compression/ZStreamException.cs:63:        public ZStreamException(System.String s, Exception e):base(s, e)
-src/Messaging/Messages/Peer/FolderContentsRequest.cs:81:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/RoomMessageCommand.cs:56:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/RecommendationsRequest.cs:49:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/RoomListRequest.cs:42:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/InterestCommand.cs:56:        public byte[] ToByteArray()
-src/Messaging/Messages/Peer/UserInfoRequest.cs:35:        public byte[] ToByteArray()
-src/Messaging/Compression/ZStream.cs:54:    internal sealed class ZStream
-src/Messaging/Messages/Peer/UploadFailed.cs:69:        public byte[] ToByteArray()
 src/Messaging/Messages/Initialization/PierceFirewall.cs:88:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/WatchUserRequest.cs:49:        public byte[] ToByteArray()
-src/Messaging/Messages/Peer/UploadDenied.cs:77:        public byte[] ToByteArray()
-src/Messaging/Compression/ZOutputStream.cs:54:    internal class ZOutputStream:System.IO.Stream
-src/Messaging/Compression/ZOutputStream.cs:93:		protected internal ZStream z = new ZStream();
-src/Messaging/Compression/ZOutputStream.cs:104:		private System.IO.Stream out_Renamed;
-src/Messaging/Compression/ZOutputStream.cs:106:		public ZOutputStream(System.IO.Stream out_Renamed):base()
-src/Messaging/Compression/ZOutputStream.cs:114:		public ZOutputStream(System.IO.Stream out_Renamed, int level):base()
-src/Messaging/Compression/ZOutputStream.cs:153:					throw new ZStreamException((compress?"de":"in") + "flating: " + z.msg);
-src/Messaging/Compression/ZOutputStream.cs:176:					throw new ZStreamException((compress?"de":"in") + "flating: " + z.msg);
+src/Messaging/Messages/IOutgoingMessage.cs:35:        byte[] ToByteArray();
+src/Messaging/Compression/Inflate.cs:112:		internal int inflateReset(ZStream z)
+src/Messaging/Compression/Inflate.cs:124:		internal int inflateEnd(ZStream z)
+src/Messaging/Compression/Inflate.cs:133:		internal int inflateInit(ZStream z, int w)
+src/Messaging/Compression/Inflate.cs:161:		internal int inflate(ZStream z, int f)
+src/Messaging/Compression/Inflate.cs:360:		internal int inflateSetDictionary(ZStream z, byte[] dictionary, int dictLength)
+src/Messaging/Compression/Inflate.cs:386:		internal int inflateSync(ZStream z)
+src/Messaging/Compression/Inflate.cs:448:		internal int inflateSyncPoint(ZStream z)
+src/Messaging/Messages/Server/UserPrivilegesRequest.cs:49:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/UserStatisticsRequest.cs:49:        public byte[] ToByteArray()
+src/Messaging/Messages/Server/AcceptChildrenCommand.cs:49:        public byte[] ToByteArray()
 src/Messaging/Compression/Deflate.cs:164:		internal ZStream strm; // pointer back to this zlib stream
 src/Messaging/Compression/Deflate.cs:1437:		internal int deflateInit(ZStream strm, int level, int bits)
 src/Messaging/Compression/Deflate.cs:1441:		internal int deflateInit(ZStream strm, int level)
@@ -1318,55 +1354,18 @@ src/Messaging/Compression/Deflate.cs:1509:		internal int deflateReset(ZStream st
 src/Messaging/Compression/Deflate.cs:1548:		internal int deflateParams(ZStream strm, int _level, int _strategy)
 src/Messaging/Compression/Deflate.cs:1579:		internal int deflateSetDictionary(ZStream strm, byte[] dictionary, int dictLength)
 src/Messaging/Compression/Deflate.cs:1616:		internal int deflate(ZStream strm, int flush)
-src/Messaging/Messages/Initialization/PeerInit.cs:104:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/UserStatusRequest.cs:49:        public byte[] ToByteArray()
-src/Messaging/Compression/ZInputStream.cs:53:    internal class ZInputStream:System.IO.BinaryReader
-src/Messaging/Compression/ZInputStream.cs:92:		protected ZStream z = new ZStream();
-src/Messaging/Compression/ZInputStream.cs:98:		internal System.IO.Stream in_Renamed = null;
-src/Messaging/Compression/ZInputStream.cs:100:		public ZInputStream(System.IO.Stream in_Renamed):base(in_Renamed)
-src/Messaging/Compression/ZInputStream.cs:111:		public ZInputStream(System.IO.Stream in_Renamed, int level):base(in_Renamed)
-src/Messaging/Compression/ZInputStream.cs:163:					throw new ZStreamException((compress?"de":"in") + "flating: " + z.msg);
-src/Messaging/Compression/ZInputStream.cs:178:			return ((long) SupportClass.ReadInput(BaseStream, tmp, 0, tmp.Length));
-src/Messaging/Messages/Peer/QueueDownloadRequest.cs:68:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/PrivateRoomToggle.cs:74:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/UserStatisticsRequest.cs:49:        public byte[] ToByteArray()
-src/Messaging/Messages/Peer/PlaceInQueueResponse.cs:88:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/PrivateRoomRemoveUser.cs:77:        public byte[] ToByteArray()
 src/Messaging/Messages/Peer/BrowseRequest.cs:35:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/UserPrivilegesRequest.cs:49:        public byte[] ToByteArray()
+src/Messaging/Messages/Peer/PlaceInQueueResponse.cs:88:        public byte[] ToByteArray()
 src/Messaging/Messages/Peer/PlaceInQueueRequest.cs:69:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/PrivateRoomRemoveOperator.cs:77:        public byte[] ToByteArray()
-src/Messaging/Compression/Inflate.cs:112:		internal int inflateReset(ZStream z)
-src/Messaging/Compression/Inflate.cs:124:		internal int inflateEnd(ZStream z)
-src/Messaging/Compression/Inflate.cs:133:		internal int inflateInit(ZStream z, int w)
-src/Messaging/Compression/Inflate.cs:161:		internal int inflate(ZStream z, int f)
-src/Messaging/Compression/Inflate.cs:360:		internal int inflateSetDictionary(ZStream z, byte[] dictionary, int dictLength)
-src/Messaging/Compression/Inflate.cs:386:		internal int inflateSync(ZStream z)
-src/Messaging/Compression/Inflate.cs:448:		internal int inflateSyncPoint(ZStream z)
-src/Messaging/Messages/IOutgoingMessage.cs:35:        byte[] ToByteArray();
-src/Messaging/Compression/SupportClass.cs:103:		/// <summary>Reads a number of characters from the current source Stream and writes the data to the target array at the specified index.</summary>
-src/Messaging/Compression/SupportClass.cs:104:		/// <param name="sourceStream">The source Stream to read from.</param>
-src/Messaging/Compression/SupportClass.cs:105:		/// <param name="target">Contains the array of characteres read from the source Stream.</param>
-src/Messaging/Compression/SupportClass.cs:107:		/// <param name="count">The maximum number of characters to read from the source Stream.</param>
-src/Messaging/Compression/SupportClass.cs:108:		/// <returns>The number of characters read. The number will be less than or equal to count depending on the data available in the source Stream. Returns -1 if the end of the stream is reached.</returns>
-src/Messaging/Compression/SupportClass.cs:109:		public static System.Int32 ReadInput(System.IO.Stream sourceStream, byte[] target, int start, int count)
-src/Messaging/Compression/SupportClass.cs:116:			int bytesRead   = sourceStream.Read(receiver, start, count);
-src/Messaging/Messages/Server/StopPublicChatCommand.cs:42:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/PrivateRoomDropOwnershipCommand.cs:49:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/UnwatchUserCommand.cs:49:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/ParentsIPCommand.cs:54:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/UserAddressRequest.cs:49:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/NewPassword.cs:69:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/PrivateRoomDropMembershipCommand.cs:49:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/PrivateMessageCommand.cs:56:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/PrivateRoomAddOperator.cs:77:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/PrivateRoomAddUser.cs:77:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/SetRoomTickerCommand.cs:56:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/SetOnlineStatusCommand.cs:58:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/LeaveRoomRequest.cs:49:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/StartPublicChatCommand.cs:42:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/SetSharedCountsCommand.cs:70:        public byte[] ToByteArray()
-src/Messaging/Messages/Server/SetListenPortCommand.cs:89:        public byte[] ToByteArray()
+src/Messaging/Messages/Peer/UserInfoRequest.cs:35:        public byte[] ToByteArray()
+src/Messaging/Messages/Peer/TransferResponse.cs:145:        public byte[] ToByteArray()
+src/Messaging/Messages/Peer/UploadFailed.cs:69:        public byte[] ToByteArray()
+src/Messaging/Messages/Peer/TransferRequest.cs:121:        public byte[] ToByteArray()
+src/Messaging/Messages/Peer/UploadDenied.cs:77:        public byte[] ToByteArray()
+src/Messaging/Messages/Peer/FolderContentsResponse.cs:121:        public byte[] ToByteArray()
+src/Messaging/Messages/Peer/QueueDownloadRequest.cs:68:        public byte[] ToByteArray()
+src/Messaging/Messages/Peer/FolderContentsRequest.cs:81:        public byte[] ToByteArray()
+src/Messaging/Messages/Initialization/PeerInit.cs:104:        public byte[] ToByteArray()
 
 ## Resolver delegate surface candidates
 src/Messaging/Handlers/PeerMessageHandler.cs:151:                                .UserInfoResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
@@ -1707,9 +1706,35 @@ examples/Web/api/Extensions.cs:131:                throw new ArgumentException("
 examples/Web/api/Extensions.cs:134:            return Path.Combine(parts);
 examples/Web/api/Extensions.cs:137:        private static string SanitizePathPart(string part)
 examples/Web/api/Extensions.cs:139:            foreach (var c in Path.GetInvalidFileNameChars())
+examples/Web/api/SharedFileCache.cs:53:                var directoryCount = System.IO.Directory.GetDirectories(Directory, "*", SearchOption.AllDirectories).Length;
+examples/Web/api/SharedFileCache.cs:55:                Files = System.IO.Directory.GetFiles(Directory, "*", SearchOption.AllDirectories)
+examples/Web/api/SharedFileCache.cs:56:                    .Select(f => new Soulseek.File(1, Extensions.GetSharedRemotePath(Directory, f), new FileInfo(f).Length, Path.GetExtension(f)))
 examples/Web/api/DTO/SearchRequest.cs:9:    public class SearchRequest
 examples/Web/api/DTO/LoginRequest.cs:3:    public class LoginRequest
 examples/Web/api/DTO/ConnectRequest.cs:3:    public class ConnectRequest
+examples/Web/api/Controllers/UserController.cs:46:        public async Task<IActionResult> Address([FromRoute, Required] string username)
+examples/Web/api/Controllers/UserController.cs:50:                return BadRequest("Username is required");
+examples/Web/api/Controllers/UserController.cs:56:                return Ok(new UserAddress() { IPAddress = endpoint.Address.ToString(), Port = endpoint.Port });
+examples/Web/api/Controllers/UserController.cs:73:        public async Task<IActionResult> Browse([FromRoute, Required] string username)
+examples/Web/api/Controllers/UserController.cs:77:                return BadRequest("Username is required");
+examples/Web/api/Controllers/UserController.cs:90:                return Ok(result);
+examples/Web/api/Controllers/UserController.cs:108:        public async Task<IActionResult> FolderContents([FromRoute, Required] string username, [FromRoute, Required] string folderName)
+examples/Web/api/Controllers/UserController.cs:112:                return BadRequest("Username is required");
+examples/Web/api/Controllers/UserController.cs:117:                return BadRequest("Folder name is required");
+examples/Web/api/Controllers/UserController.cs:123:                return Ok(result);
+examples/Web/api/Controllers/UserController.cs:145:        public IActionResult BrowseStatus([FromRoute, Required] string username)
+examples/Web/api/Controllers/UserController.cs:149:                return BadRequest("Username is required");
+examples/Web/api/Controllers/UserController.cs:154:                return Ok(progress);
+examples/Web/api/Controllers/UserController.cs:169:        public async Task<IActionResult> Info([FromRoute, Required] string username)
+examples/Web/api/Controllers/UserController.cs:173:                return BadRequest("Username is required");
+examples/Web/api/Controllers/UserController.cs:179:                return Ok(response);
+examples/Web/api/Controllers/UserController.cs:196:        public async Task<IActionResult> Status([FromRoute, Required] string username)
+examples/Web/api/Controllers/UserController.cs:200:                return BadRequest("Username is required");
+examples/Web/api/Controllers/UserController.cs:206:                return Ok(response);
+examples/Web/api/Controllers/UserController.cs:223:        public async Task<IActionResult> Statistics([FromRoute, Required] string username)
+examples/Web/api/Controllers/UserController.cs:227:                return BadRequest("Username is required");
+examples/Web/api/Controllers/UserController.cs:233:                return Ok(response);
+examples/Web/api/DTO/QueueDownloadRequest.cs:3:    public class QueueDownloadRequest
 examples/Web/api/Startup.cs:37:        internal static string BasePath { get; set; }
 examples/Web/api/Startup.cs:69:            BasePath = Configuration.GetValue<string>("BASE_PATH");
 examples/Web/api/Startup.cs:169:                options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, typeof(Startup).GetTypeInfo().Assembly.GetName().Name + ".xml"));
@@ -1746,75 +1771,6 @@ examples/Web/api/Startup.cs:616:            var localFilename = Extensions.GetFu
 examples/Web/api/Startup.cs:635:            var cts = new CancellationTokenSource();
 examples/Web/api/Startup.cs:671:                    using var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read);
 examples/Web/api/Startup.cs:672:                    await Client.UploadAsync(username, filename, fileInfo.Length, (_) => Task.FromResult((Stream)stream), options: topts, cancellationToken: cts.Token);
-examples/Web/api/DTO/QueueDownloadRequest.cs:3:    public class QueueDownloadRequest
-examples/Web/api/Controllers/ConversationsController.cs:52:        public async Task<IActionResult> Acknowledge([FromRoute]string username, [FromRoute]int id)
-examples/Web/api/Controllers/ConversationsController.cs:56:                return BadRequest("Username is required");
-examples/Web/api/Controllers/ConversationsController.cs:81:        public async Task<IActionResult> AcknowledgeAll([FromRoute]string username)
-examples/Web/api/Controllers/ConversationsController.cs:85:                return BadRequest("Username is required");
-examples/Web/api/Controllers/ConversationsController.cs:120:        public IActionResult Delete([FromRoute]string username)
-examples/Web/api/Controllers/ConversationsController.cs:124:                return BadRequest("Username is required");
-examples/Web/api/Controllers/ConversationsController.cs:145:        public IActionResult GetAll()
-examples/Web/api/Controllers/ConversationsController.cs:153:            return Ok(response);
-examples/Web/api/Controllers/ConversationsController.cs:167:        public IActionResult GetByUsername([FromRoute]string username)
-examples/Web/api/Controllers/ConversationsController.cs:171:                return BadRequest("Username is required");
-examples/Web/api/Controllers/ConversationsController.cs:180:                return Ok(response);
-examples/Web/api/Controllers/ConversationsController.cs:198:        public async Task<IActionResult> Send([FromRoute]string username, [FromBody]string message)
-examples/Web/api/Controllers/ConversationsController.cs:202:                return BadRequest("Username is required");
-examples/Web/api/Controllers/ConversationsController.cs:207:                return BadRequest("Message is required");
-examples/Web/api/Controllers/UserController.cs:46:        public async Task<IActionResult> Address([FromRoute, Required] string username)
-examples/Web/api/Controllers/UserController.cs:50:                return BadRequest("Username is required");
-examples/Web/api/Controllers/UserController.cs:56:                return Ok(new UserAddress() { IPAddress = endpoint.Address.ToString(), Port = endpoint.Port });
-examples/Web/api/Controllers/UserController.cs:73:        public async Task<IActionResult> Browse([FromRoute, Required] string username)
-examples/Web/api/Controllers/UserController.cs:77:                return BadRequest("Username is required");
-examples/Web/api/Controllers/UserController.cs:90:                return Ok(result);
-examples/Web/api/Controllers/UserController.cs:108:        public async Task<IActionResult> FolderContents([FromRoute, Required] string username, [FromRoute, Required] string folderName)
-examples/Web/api/Controllers/UserController.cs:112:                return BadRequest("Username is required");
-examples/Web/api/Controllers/UserController.cs:117:                return BadRequest("Folder name is required");
-examples/Web/api/Controllers/UserController.cs:123:                return Ok(result);
-examples/Web/api/Controllers/UserController.cs:145:        public IActionResult BrowseStatus([FromRoute, Required] string username)
-examples/Web/api/Controllers/UserController.cs:149:                return BadRequest("Username is required");
-examples/Web/api/Controllers/UserController.cs:154:                return Ok(progress);
-examples/Web/api/Controllers/UserController.cs:169:        public async Task<IActionResult> Info([FromRoute, Required] string username)
-examples/Web/api/Controllers/UserController.cs:173:                return BadRequest("Username is required");
-examples/Web/api/Controllers/UserController.cs:179:                return Ok(response);
-examples/Web/api/Controllers/UserController.cs:196:        public async Task<IActionResult> Status([FromRoute, Required] string username)
-examples/Web/api/Controllers/UserController.cs:200:                return BadRequest("Username is required");
-examples/Web/api/Controllers/UserController.cs:206:                return Ok(response);
-examples/Web/api/Controllers/UserController.cs:223:        public async Task<IActionResult> Statistics([FromRoute, Required] string username)
-examples/Web/api/Controllers/UserController.cs:227:                return BadRequest("Username is required");
-examples/Web/api/Controllers/UserController.cs:233:                return Ok(response);
-examples/Web/api/Controllers/SearchesController.cs:51:        public async Task<IActionResult> Post([FromBody] SearchRequest request)
-examples/Web/api/Controllers/SearchesController.cs:53:            if (!TryNormalizeSearchRequest(request, out var searchText, out var badRequest))
-examples/Web/api/Controllers/SearchesController.cs:55:                return badRequest;
-examples/Web/api/Controllers/SearchesController.cs:69:                return Ok(results);
-examples/Web/api/Controllers/SearchesController.cs:96:        public async Task<IActionResult> PostUsers([FromBody] SearchRequest request, [FromRoute] string username)
-examples/Web/api/Controllers/SearchesController.cs:100:                return BadRequest("Username is required");
-examples/Web/api/Controllers/SearchesController.cs:103:            if (!TryNormalizeSearchRequest(request, out var searchText, out var badRequest))
-examples/Web/api/Controllers/SearchesController.cs:105:                return badRequest;
-examples/Web/api/Controllers/SearchesController.cs:119:                return Ok(results);
-examples/Web/api/Controllers/SearchesController.cs:143:        public IActionResult GetById([FromRoute] Guid id)
-examples/Web/api/Controllers/SearchesController.cs:152:            return Ok(search);
-examples/Web/api/Controllers/SearchesController.cs:155:        private bool TryNormalizeSearchRequest(SearchRequest request, out string searchText, out IActionResult badRequest)
-examples/Web/api/Controllers/SearchesController.cs:158:            badRequest = null;
-examples/Web/api/Controllers/SearchesController.cs:162:                badRequest = BadRequest("Request body is required");
-examples/Web/api/Controllers/SearchesController.cs:168:                badRequest = BadRequest("Search text is required");
-examples/Web/api/Controllers/SearchesController.cs:176:                badRequest = BadRequest("Search text must contain at least one term longer than one character");
-examples/Web/api/Controllers/SearchesController.cs:182:                badRequest = BadRequest("Search timeout must be greater than or equal to one");
-examples/Web/api/Controllers/SearchesController.cs:188:                badRequest = BadRequest("Response limit must be greater than or equal to one");
-examples/Web/api/Controllers/SearchesController.cs:194:                badRequest = BadRequest("File limit must be greater than or equal to one");
-examples/Web/api/Controllers/SearchesController.cs:200:                badRequest = BadRequest("Minimum response file count must be greater than or equal to zero");
-examples/Web/api/Controllers/SearchesController.cs:206:                badRequest = BadRequest("Maximum peer queue length must be greater than or equal to zero");
-examples/Web/api/Controllers/SearchesController.cs:212:                badRequest = BadRequest("Minimum peer upload speed must be greater than or equal to zero");
-examples/Web/api/SharedFileCache.cs:53:                var directoryCount = System.IO.Directory.GetDirectories(Directory, "*", SearchOption.AllDirectories).Length;
-examples/Web/api/SharedFileCache.cs:55:                Files = System.IO.Directory.GetFiles(Directory, "*", SearchOption.AllDirectories)
-examples/Web/api/SharedFileCache.cs:56:                    .Select(f => new Soulseek.File(1, Extensions.GetSharedRemotePath(Directory, f), new FileInfo(f).Length, Path.GetExtension(f)))
-examples/Web/api/Controllers/ServerController.cs:34:        public IActionResult Disconnect([FromBody]string message)
-examples/Web/api/Controllers/ServerController.cs:47:        public async Task<IActionResult> Connect([FromBody]ConnectRequest req)
-examples/Web/api/Controllers/ServerController.cs:51:                return BadRequest("Request body is required");
-examples/Web/api/Controllers/ServerController.cs:63:                    return BadRequest($"Port must be between {IPEndPoint.MinPort} and {IPEndPoint.MaxPort}");
-examples/Web/api/Controllers/ServerController.cs:67:                return Ok();
-examples/Web/api/Controllers/ServerController.cs:73:                return Ok();
-examples/Web/api/Controllers/ServerController.cs:76:            return BadRequest("Provide one of the following: address and port, username and password, or address, port, username and password");
 examples/Web/api/Controllers/TransfersController.cs:57:        public IActionResult CancelDownload([FromRoute, Required] string username, [FromRoute, Required] string id, [FromQuery] bool remove = false)
 examples/Web/api/Controllers/TransfersController.cs:61:                return BadRequest("Username is required");
 examples/Web/api/Controllers/TransfersController.cs:66:                return BadRequest("Transfer id is required");
@@ -1859,6 +1815,13 @@ examples/Web/api/Controllers/TransfersController.cs:348:            return new F
 examples/Web/api/Controllers/TransfersController.cs:351:        private static void DisposeUntrackedCancellationTokenSource(CancellationTokenSource cts, int isTracked)
 examples/Web/api/Controllers/TransfersController.cs:359:        private IActionResult CancelTransfer(TransferDirection direction, string username, string id, bool remove = false)
 examples/Web/api/Controllers/TransfersController.cs:363:                transfer.CancellationTokenSource.Cancel();
+examples/Web/api/Controllers/ServerController.cs:34:        public IActionResult Disconnect([FromBody]string message)
+examples/Web/api/Controllers/ServerController.cs:47:        public async Task<IActionResult> Connect([FromBody]ConnectRequest req)
+examples/Web/api/Controllers/ServerController.cs:51:                return BadRequest("Request body is required");
+examples/Web/api/Controllers/ServerController.cs:63:                    return BadRequest($"Port must be between {IPEndPoint.MinPort} and {IPEndPoint.MaxPort}");
+examples/Web/api/Controllers/ServerController.cs:67:                return Ok();
+examples/Web/api/Controllers/ServerController.cs:73:                return Ok();
+examples/Web/api/Controllers/ServerController.cs:76:            return BadRequest("Provide one of the following: address and port, username and password, or address, port, username and password");
 examples/Web/api/Controllers/RoomsController.cs:42:        public IActionResult GetAll()
 examples/Web/api/Controllers/RoomsController.cs:44:            return Ok(Tracker.Rooms.Keys);
 examples/Web/api/Controllers/RoomsController.cs:58:        public IActionResult GetByRoomName([FromRoute]string roomName)
@@ -1885,8 +1848,6 @@ examples/Web/api/Controllers/RoomsController.cs:269:        public async Task<IA
 examples/Web/api/Controllers/RoomsController.cs:273:                return BadRequest("Room name is required");
 examples/Web/api/Controllers/RoomsController.cs:311:        public async Task<IActionResult> LeaveRoom([FromRoute]string roomName)
 examples/Web/api/Controllers/RoomsController.cs:315:                return BadRequest("Room name is required");
-examples/Web/api/Controllers/PublicChatController.cs:32:        public async Task<IActionResult> Start()
-examples/Web/api/Controllers/PublicChatController.cs:44:        public async Task<IActionResult> Stop()
 examples/Web/api/Controllers/SessionController.cs:35:        public IActionResult Enabled()
 examples/Web/api/Controllers/SessionController.cs:37:            return Ok(Startup.EnableSecurity);
 examples/Web/api/Controllers/SessionController.cs:54:        public IActionResult Check()
@@ -1895,6 +1856,44 @@ examples/Web/api/Controllers/SessionController.cs:74:        public IActionResul
 examples/Web/api/Controllers/SessionController.cs:78:                return BadRequest();
 examples/Web/api/Controllers/SessionController.cs:83:                return BadRequest("Username and/or Password missing or invalid");
 examples/Web/api/Controllers/SessionController.cs:88:                return Ok(new TokenResponse(GetJwtSecurityToken()));
+examples/Web/api/Controllers/PublicChatController.cs:32:        public async Task<IActionResult> Start()
+examples/Web/api/Controllers/PublicChatController.cs:44:        public async Task<IActionResult> Stop()
+examples/Web/api/Controllers/SearchesController.cs:51:        public async Task<IActionResult> Post([FromBody] SearchRequest request)
+examples/Web/api/Controllers/SearchesController.cs:53:            if (!TryNormalizeSearchRequest(request, out var searchText, out var badRequest))
+examples/Web/api/Controllers/SearchesController.cs:55:                return badRequest;
+examples/Web/api/Controllers/SearchesController.cs:69:                return Ok(results);
+examples/Web/api/Controllers/SearchesController.cs:96:        public async Task<IActionResult> PostUsers([FromBody] SearchRequest request, [FromRoute] string username)
+examples/Web/api/Controllers/SearchesController.cs:100:                return BadRequest("Username is required");
+examples/Web/api/Controllers/SearchesController.cs:103:            if (!TryNormalizeSearchRequest(request, out var searchText, out var badRequest))
+examples/Web/api/Controllers/SearchesController.cs:105:                return badRequest;
+examples/Web/api/Controllers/SearchesController.cs:119:                return Ok(results);
+examples/Web/api/Controllers/SearchesController.cs:143:        public IActionResult GetById([FromRoute] Guid id)
+examples/Web/api/Controllers/SearchesController.cs:152:            return Ok(search);
+examples/Web/api/Controllers/SearchesController.cs:155:        private bool TryNormalizeSearchRequest(SearchRequest request, out string searchText, out IActionResult badRequest)
+examples/Web/api/Controllers/SearchesController.cs:158:            badRequest = null;
+examples/Web/api/Controllers/SearchesController.cs:162:                badRequest = BadRequest("Request body is required");
+examples/Web/api/Controllers/SearchesController.cs:168:                badRequest = BadRequest("Search text is required");
+examples/Web/api/Controllers/SearchesController.cs:176:                badRequest = BadRequest("Search text must contain at least one term longer than one character");
+examples/Web/api/Controllers/SearchesController.cs:182:                badRequest = BadRequest("Search timeout must be greater than or equal to one");
+examples/Web/api/Controllers/SearchesController.cs:188:                badRequest = BadRequest("Response limit must be greater than or equal to one");
+examples/Web/api/Controllers/SearchesController.cs:194:                badRequest = BadRequest("File limit must be greater than or equal to one");
+examples/Web/api/Controllers/SearchesController.cs:200:                badRequest = BadRequest("Minimum response file count must be greater than or equal to zero");
+examples/Web/api/Controllers/SearchesController.cs:206:                badRequest = BadRequest("Maximum peer queue length must be greater than or equal to zero");
+examples/Web/api/Controllers/SearchesController.cs:212:                badRequest = BadRequest("Minimum peer upload speed must be greater than or equal to zero");
+examples/Web/api/Controllers/ConversationsController.cs:52:        public async Task<IActionResult> Acknowledge([FromRoute]string username, [FromRoute]int id)
+examples/Web/api/Controllers/ConversationsController.cs:56:                return BadRequest("Username is required");
+examples/Web/api/Controllers/ConversationsController.cs:81:        public async Task<IActionResult> AcknowledgeAll([FromRoute]string username)
+examples/Web/api/Controllers/ConversationsController.cs:85:                return BadRequest("Username is required");
+examples/Web/api/Controllers/ConversationsController.cs:120:        public IActionResult Delete([FromRoute]string username)
+examples/Web/api/Controllers/ConversationsController.cs:124:                return BadRequest("Username is required");
+examples/Web/api/Controllers/ConversationsController.cs:145:        public IActionResult GetAll()
+examples/Web/api/Controllers/ConversationsController.cs:153:            return Ok(response);
+examples/Web/api/Controllers/ConversationsController.cs:167:        public IActionResult GetByUsername([FromRoute]string username)
+examples/Web/api/Controllers/ConversationsController.cs:171:                return BadRequest("Username is required");
+examples/Web/api/Controllers/ConversationsController.cs:180:                return Ok(response);
+examples/Web/api/Controllers/ConversationsController.cs:198:        public async Task<IActionResult> Send([FromRoute]string username, [FromBody]string message)
+examples/Web/api/Controllers/ConversationsController.cs:202:                return BadRequest("Username is required");
+examples/Web/api/Controllers/ConversationsController.cs:207:                return BadRequest("Message is required");
 
 ## Example Web API path and shared-file candidates
 tests/Soulseek.Tests.Unit/WebApiTransferTests.cs:93:            var controller = new TransfersController(CreateConfiguration(Path.GetTempPath()), Mock.Of<ISoulseekClient>(), new TransferTracker());
@@ -2246,43 +2245,6 @@ examples/Web/api/Controllers/SearchesController.cs:194:                badReques
 examples/Web/api/Controllers/SearchesController.cs:200:                badRequest = BadRequest("Minimum response file count must be greater than or equal to zero");
 examples/Web/api/Controllers/SearchesController.cs:206:                badRequest = BadRequest("Maximum peer queue length must be greater than or equal to zero");
 examples/Web/api/Controllers/SearchesController.cs:212:                badRequest = BadRequest("Minimum peer upload speed must be greater than or equal to zero");
-examples/Web/api/Controllers/ConversationsController.cs:50:        [ProducesResponseType(200)]
-examples/Web/api/Controllers/ConversationsController.cs:51:        [ProducesResponseType(404)]
-examples/Web/api/Controllers/ConversationsController.cs:52:        public async Task<IActionResult> Acknowledge([FromRoute]string username, [FromRoute]int id)
-examples/Web/api/Controllers/ConversationsController.cs:56:                return BadRequest("Username is required");
-examples/Web/api/Controllers/ConversationsController.cs:63:                return NotFound();
-examples/Web/api/Controllers/ConversationsController.cs:67:            return StatusCode(200);
-examples/Web/api/Controllers/ConversationsController.cs:79:        [ProducesResponseType(200)]
-examples/Web/api/Controllers/ConversationsController.cs:80:        [ProducesResponseType(404)]
-examples/Web/api/Controllers/ConversationsController.cs:81:        public async Task<IActionResult> AcknowledgeAll([FromRoute]string username)
-examples/Web/api/Controllers/ConversationsController.cs:85:                return BadRequest("Username is required");
-examples/Web/api/Controllers/ConversationsController.cs:92:                return NotFound();
-examples/Web/api/Controllers/ConversationsController.cs:107:            return StatusCode(200);
-examples/Web/api/Controllers/ConversationsController.cs:118:        [ProducesResponseType(404)]
-examples/Web/api/Controllers/ConversationsController.cs:119:        [ProducesResponseType(204)]
-examples/Web/api/Controllers/ConversationsController.cs:120:        public IActionResult Delete([FromRoute]string username)
-examples/Web/api/Controllers/ConversationsController.cs:124:                return BadRequest("Username is required");
-examples/Web/api/Controllers/ConversationsController.cs:131:                return StatusCode(204);
-examples/Web/api/Controllers/ConversationsController.cs:134:            return StatusCode(404);
-examples/Web/api/Controllers/ConversationsController.cs:144:        [ProducesResponseType(typeof(Dictionary<string, List<PrivateMessageResponse>>), 200)]
-examples/Web/api/Controllers/ConversationsController.cs:145:        public IActionResult GetAll()
-examples/Web/api/Controllers/ConversationsController.cs:153:            return Ok(response);
-examples/Web/api/Controllers/ConversationsController.cs:165:        [ProducesResponseType(typeof(List<PrivateMessageResponse>), 200)]
-examples/Web/api/Controllers/ConversationsController.cs:166:        [ProducesResponseType(404)]
-examples/Web/api/Controllers/ConversationsController.cs:167:        public IActionResult GetByUsername([FromRoute]string username)
-examples/Web/api/Controllers/ConversationsController.cs:171:                return BadRequest("Username is required");
-examples/Web/api/Controllers/ConversationsController.cs:180:                return Ok(response);
-examples/Web/api/Controllers/ConversationsController.cs:183:            return NotFound();
-examples/Web/api/Controllers/ConversationsController.cs:196:        [ProducesResponseType(201)]
-examples/Web/api/Controllers/ConversationsController.cs:197:        [ProducesResponseType(400)]
-examples/Web/api/Controllers/ConversationsController.cs:198:        public async Task<IActionResult> Send([FromRoute]string username, [FromBody]string message)
-examples/Web/api/Controllers/ConversationsController.cs:202:                return BadRequest("Username is required");
-examples/Web/api/Controllers/ConversationsController.cs:207:                return BadRequest("Message is required");
-examples/Web/api/Controllers/ConversationsController.cs:220:            return StatusCode(201);
-examples/Web/api/Controllers/PublicChatController.cs:32:        public async Task<IActionResult> Start()
-examples/Web/api/Controllers/PublicChatController.cs:35:            return StatusCode(StatusCodes.Status201Created);
-examples/Web/api/Controllers/PublicChatController.cs:44:        public async Task<IActionResult> Stop()
-examples/Web/api/Controllers/PublicChatController.cs:47:            return StatusCode(StatusCodes.Status204NoContent);
 examples/Web/api/Controllers/RoomsController.cs:41:        [ProducesResponseType(typeof(Dictionary<string, Dictionary<string, Room>>), 200)]
 examples/Web/api/Controllers/RoomsController.cs:42:        public IActionResult GetAll()
 examples/Web/api/Controllers/RoomsController.cs:44:            return Ok(Tracker.Rooms.Keys);
@@ -2344,6 +2306,43 @@ examples/Web/api/Controllers/RoomsController.cs:311:        public async Task<IA
 examples/Web/api/Controllers/RoomsController.cs:315:                return BadRequest("Room name is required");
 examples/Web/api/Controllers/RoomsController.cs:320:                return StatusCode(StatusCodes.Status404NotFound);
 examples/Web/api/Controllers/RoomsController.cs:326:            return StatusCode(StatusCodes.Status204NoContent);
+examples/Web/api/Controllers/PublicChatController.cs:32:        public async Task<IActionResult> Start()
+examples/Web/api/Controllers/PublicChatController.cs:35:            return StatusCode(StatusCodes.Status201Created);
+examples/Web/api/Controllers/PublicChatController.cs:44:        public async Task<IActionResult> Stop()
+examples/Web/api/Controllers/PublicChatController.cs:47:            return StatusCode(StatusCodes.Status204NoContent);
+examples/Web/api/Controllers/ConversationsController.cs:50:        [ProducesResponseType(200)]
+examples/Web/api/Controllers/ConversationsController.cs:51:        [ProducesResponseType(404)]
+examples/Web/api/Controllers/ConversationsController.cs:52:        public async Task<IActionResult> Acknowledge([FromRoute]string username, [FromRoute]int id)
+examples/Web/api/Controllers/ConversationsController.cs:56:                return BadRequest("Username is required");
+examples/Web/api/Controllers/ConversationsController.cs:63:                return NotFound();
+examples/Web/api/Controllers/ConversationsController.cs:67:            return StatusCode(200);
+examples/Web/api/Controllers/ConversationsController.cs:79:        [ProducesResponseType(200)]
+examples/Web/api/Controllers/ConversationsController.cs:80:        [ProducesResponseType(404)]
+examples/Web/api/Controllers/ConversationsController.cs:81:        public async Task<IActionResult> AcknowledgeAll([FromRoute]string username)
+examples/Web/api/Controllers/ConversationsController.cs:85:                return BadRequest("Username is required");
+examples/Web/api/Controllers/ConversationsController.cs:92:                return NotFound();
+examples/Web/api/Controllers/ConversationsController.cs:107:            return StatusCode(200);
+examples/Web/api/Controllers/ConversationsController.cs:118:        [ProducesResponseType(404)]
+examples/Web/api/Controllers/ConversationsController.cs:119:        [ProducesResponseType(204)]
+examples/Web/api/Controllers/ConversationsController.cs:120:        public IActionResult Delete([FromRoute]string username)
+examples/Web/api/Controllers/ConversationsController.cs:124:                return BadRequest("Username is required");
+examples/Web/api/Controllers/ConversationsController.cs:131:                return StatusCode(204);
+examples/Web/api/Controllers/ConversationsController.cs:134:            return StatusCode(404);
+examples/Web/api/Controllers/ConversationsController.cs:144:        [ProducesResponseType(typeof(Dictionary<string, List<PrivateMessageResponse>>), 200)]
+examples/Web/api/Controllers/ConversationsController.cs:145:        public IActionResult GetAll()
+examples/Web/api/Controllers/ConversationsController.cs:153:            return Ok(response);
+examples/Web/api/Controllers/ConversationsController.cs:165:        [ProducesResponseType(typeof(List<PrivateMessageResponse>), 200)]
+examples/Web/api/Controllers/ConversationsController.cs:166:        [ProducesResponseType(404)]
+examples/Web/api/Controllers/ConversationsController.cs:167:        public IActionResult GetByUsername([FromRoute]string username)
+examples/Web/api/Controllers/ConversationsController.cs:171:                return BadRequest("Username is required");
+examples/Web/api/Controllers/ConversationsController.cs:180:                return Ok(response);
+examples/Web/api/Controllers/ConversationsController.cs:183:            return NotFound();
+examples/Web/api/Controllers/ConversationsController.cs:196:        [ProducesResponseType(201)]
+examples/Web/api/Controllers/ConversationsController.cs:197:        [ProducesResponseType(400)]
+examples/Web/api/Controllers/ConversationsController.cs:198:        public async Task<IActionResult> Send([FromRoute]string username, [FromBody]string message)
+examples/Web/api/Controllers/ConversationsController.cs:202:                return BadRequest("Username is required");
+examples/Web/api/Controllers/ConversationsController.cs:207:                return BadRequest("Message is required");
+examples/Web/api/Controllers/ConversationsController.cs:220:            return StatusCode(201);
 
 ## Example Web API transfer lifecycle candidates
 tests/Soulseek.Tests.Unit/WebApiTransferTests.cs:41:            var ex = Record.Exception(() => tracker.TryRemove(TransferDirection.Download, "missing", "missing-id"));
@@ -2477,18 +2476,18 @@ examples/Web/api/Startup.cs:779:                    TryRemove(responseToken, out
 examples/Web/api/Startup.cs:790:            public bool TryRemove(int responseToken, out (string Username, int Token, string Query, SearchResponse SearchResponse) response)
 examples/Web/api/Startup.cs:794:                if (Cache.TryRemove(responseToken, out response))
 examples/Web/api/SharedFileCache.cs:95:            SQLite?.Dispose();
-examples/Web/api/Controllers/UserController.cs:84:                _ = Task.Run(async () =>
-examples/Web/api/Controllers/UserController.cs:87:                    BrowseTracker.TryRemove(username);
+examples/Web/api/Controllers/ConversationsController.cs:99:                tasks.Add(Task.Run(async () =>
+examples/Web/api/Controllers/ConversationsController.cs:127:            var deleted = Tracker.Conversations.TryRemove(username, out _);
+examples/Web/api/Controllers/ConversationsController.cs:212:            Tracker.AddOrUpdate(username, new PrivateMessage()
 examples/Web/api/Controllers/SearchesController.cs:61:                responseReceived: (e) => Tracker.AddOrUpdate(id, e.Search),
 examples/Web/api/Controllers/SearchesController.cs:62:                stateChanged: (e) => Tracker.AddOrUpdate(id, e.Search));
 examples/Web/api/Controllers/SearchesController.cs:78:                Tracker.TryRemove(id);
 examples/Web/api/Controllers/SearchesController.cs:111:                responseReceived: (e) => Tracker.AddOrUpdate(id, e.Search),
 examples/Web/api/Controllers/SearchesController.cs:112:                stateChanged: (e) => Tracker.AddOrUpdate(id, e.Search));
 examples/Web/api/Controllers/SearchesController.cs:128:                Tracker.TryRemove(id);
-examples/Web/api/Controllers/ConversationsController.cs:99:                tasks.Add(Task.Run(async () =>
-examples/Web/api/Controllers/ConversationsController.cs:127:            var deleted = Tracker.Conversations.TryRemove(username, out _);
-examples/Web/api/Controllers/ConversationsController.cs:212:            Tracker.AddOrUpdate(username, new PrivateMessage()
 examples/Web/api/Controllers/RoomsController.cs:324:            Tracker.TryRemove(roomName);
+examples/Web/api/Controllers/UserController.cs:84:                _ = Task.Run(async () =>
+examples/Web/api/Controllers/UserController.cs:87:                    BrowseTracker.TryRemove(username);
 examples/Web/api/Controllers/TransfersController.cs:115:        [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "The cancellation token source is owned by the tracker after the first state/progress callback; untracked setup failures are disposed before returning.")]
 examples/Web/api/Controllers/TransfersController.cs:123:            CancellationTokenSource cts = null;
 examples/Web/api/Controllers/TransfersController.cs:143:                var waitUntilEnqueue = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -2703,12 +2702,6 @@ examples/Web/api/Trackers/IBrowseTracker.cs:14:        ConcurrentDictionary<stri
 examples/Web/api/Trackers/IBrowseTracker.cs:21:        void AddOrUpdate(string username, BrowseProgressUpdatedEventArgs progress);
 examples/Web/api/Trackers/IBrowseTracker.cs:27:        void TryRemove(string username);
 examples/Web/api/Trackers/IBrowseTracker.cs:35:        bool TryGet(string username, out BrowseProgressUpdatedEventArgs progress);
-examples/Web/api/Trackers/IConversationTracker.cs:1:namespace WebAPI.Trackers
-examples/Web/api/Trackers/IConversationTracker.cs:10:    public interface IConversationTracker
-examples/Web/api/Trackers/IConversationTracker.cs:15:        ConcurrentDictionary<string, IList<PrivateMessage>> Conversations { get; }
-examples/Web/api/Trackers/IConversationTracker.cs:23:        void AddOrUpdate(string username, PrivateMessage message);
-examples/Web/api/Trackers/IConversationTracker.cs:31:        bool TryGet(string username, out IList<PrivateMessage> messages);
-examples/Web/api/Trackers/IConversationTracker.cs:37:        void TryRemove(string username);
 examples/Web/api/Trackers/IRoomTracker.cs:1:namespace WebAPI.Trackers
 examples/Web/api/Trackers/IRoomTracker.cs:10:    public interface IRoomTracker
 examples/Web/api/Trackers/IRoomTracker.cs:15:        ConcurrentDictionary<string, Room> Rooms { get; }
@@ -2718,6 +2711,12 @@ examples/Web/api/Trackers/IRoomTracker.cs:36:        void TryAddUser(string room
 examples/Web/api/Trackers/IRoomTracker.cs:44:        bool TryGet(string roomName, out Room room);
 examples/Web/api/Trackers/IRoomTracker.cs:50:        void TryRemove(string roomName);
 examples/Web/api/Trackers/IRoomTracker.cs:57:        void TryRemoveUser(string roomName, string username);
+examples/Web/api/Trackers/IConversationTracker.cs:1:namespace WebAPI.Trackers
+examples/Web/api/Trackers/IConversationTracker.cs:10:    public interface IConversationTracker
+examples/Web/api/Trackers/IConversationTracker.cs:15:        ConcurrentDictionary<string, IList<PrivateMessage>> Conversations { get; }
+examples/Web/api/Trackers/IConversationTracker.cs:23:        void AddOrUpdate(string username, PrivateMessage message);
+examples/Web/api/Trackers/IConversationTracker.cs:31:        bool TryGet(string username, out IList<PrivateMessage> messages);
+examples/Web/api/Trackers/IConversationTracker.cs:37:        void TryRemove(string username);
 
 ## Security-sensitive material candidates
 ./scripts/check-remediation-baseline.sh:603:secret_pattern='-----BEGIN (RSA |DSA |EC |OPENSSH |PGP )?PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9_]{36,}|xox[baprs]-[A-Za-z0-9-]{20,}|AKIA[0-9A-Z]{16}|(?i)(api[_-]?key|access[_-]?token|client[_-]?secret)["'\'']?\s*[:=]\s*["'\''][A-Za-z0-9_./+=-]{24,}["'\'']'
