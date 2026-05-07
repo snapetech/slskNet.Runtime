@@ -33,6 +33,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
     using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
+    using Soulseek.Network.Tcp;
     using Xunit;
 
     public class PeerMessageHandlerTests
@@ -636,6 +637,47 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "SearchRequest")]
+        [Theory(DisplayName = "Writes obfuscated RawSearchResponse encoded"), AutoData]
+        public void Writes_Obfuscated_RawSearchResponse_Encoded(string username, IPEndPoint endpoint, int token, string query)
+        {
+            var payload = Encoding.UTF8.GetBytes("raw search response");
+            var stream = new System.IO.MemoryStream(payload);
+            var rawResponse = new RawSearchResponse(payload.Length, stream);
+            long writtenLength = 0;
+            byte[] writtenBytes = null;
+
+            var options = new SoulseekClientOptions(
+                searchResponseResolver: (user, tok, searchQuery) => Task.FromResult<SearchResponse>(rawResponse));
+
+            var (handler, mocks) = GetFixture(username, endpoint, options);
+            mocks.PeerConnection.Setup(m => m.Obfuscated).Returns(true);
+            mocks.PeerConnection.Setup(m => m.WriteAsync(
+                    It.IsAny<long>(),
+                    It.IsAny<System.IO.Stream>(),
+                    It.IsAny<Func<int, CancellationToken, Task<int>>>(),
+                    It.IsAny<Action<int, int, int>>(),
+                    It.IsAny<CancellationToken?>()))
+                .Callback<long, System.IO.Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, output, governor, reporter, cancellationToken) =>
+                {
+                    writtenLength = length;
+                    writtenBytes = ReadStream(output, length);
+                })
+                .Returns(Task.CompletedTask);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.SearchRequest)
+                .WriteInteger(token)
+                .WriteString(query)
+                .Build();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
+
+            Assert.Equal(payload.Length + 4, writtenLength);
+            Assert.True(RotatedObfuscation.Decode(writtenBytes).Matches(payload));
+            Assert.False(stream.CanRead);
+        }
+
+        [Trait("Category", "SearchRequest")]
         [Theory(DisplayName = "Disposes RawSearchResponse stream when write fails"), AutoData]
         public void Disposes_RawSearchResponse_Stream_When_Write_Fails(string username, IPEndPoint endpoint, int token, string query)
         {
@@ -804,6 +846,41 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                     It.IsAny<Action<int, int, int>>(),
                     It.IsAny<CancellationToken?>()),
                 Times.Once);
+            Assert.False(stream.CanRead);
+        }
+
+        [Trait("Category", "BrowseRequest")]
+        [Theory(DisplayName = "Writes obfuscated RawBrowseResponse encoded"), AutoData]
+        public void Writes_Obfuscated_RawBrowseResponse_Encoded(string username, IPEndPoint endpoint)
+        {
+            var payload = Encoding.UTF8.GetBytes("raw browse response");
+            var stream = new System.IO.MemoryStream(payload);
+            var rawResponse = new RawBrowseResponse(payload.Length, stream);
+            long writtenLength = 0;
+            byte[] writtenBytes = null;
+
+            var options = new SoulseekClientOptions(
+                browseResponseResolver: (user, tok) => Task.FromResult<BrowseResponse>(rawResponse));
+
+            var (handler, mocks) = GetFixture(username, endpoint, options);
+            mocks.PeerConnection.Setup(m => m.Obfuscated).Returns(true);
+            mocks.PeerConnection.Setup(m => m.WriteAsync(
+                    It.IsAny<long>(),
+                    It.IsAny<System.IO.Stream>(),
+                    It.IsAny<Func<int, CancellationToken, Task<int>>>(),
+                    It.IsAny<Action<int, int, int>>(),
+                    It.IsAny<CancellationToken?>()))
+                .Callback<long, System.IO.Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, output, governor, reporter, cancellationToken) =>
+                {
+                    writtenLength = length;
+                    writtenBytes = ReadStream(output, length);
+                })
+                .Returns(Task.CompletedTask);
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, new BrowseRequest().ToByteArray());
+
+            Assert.Equal(payload.Length + 4, writtenLength);
+            Assert.True(RotatedObfuscation.Decode(writtenBytes).Matches(payload));
             Assert.False(stream.CanRead);
         }
 
@@ -1127,10 +1204,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Failed to resolve place in Queue")), ex), Times.Once);
         }
 
-        [Trait("Category", "Diagnostic")]
-        [Theory(DisplayName = "Creates diagnostic when PlaceInQueueResponseResolver returns invalid output"), AutoData]
-        public void Creates_Diagnostic_When_PlaceInQueueResponseResolver_Returns_Invalid_Output(string username, IPEndPoint endpoint, string filename)
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Writes PlaceInQueueResponse with negative position when resolver returns it"), AutoData]
+        public void Writes_PlaceInQueueResponse_With_Negative_Position_When_Resolver_Returns_It(string username, IPEndPoint endpoint, string filename)
         {
+            // PlaceInQueueResponse now accepts negative positions on the wire (some clients use
+            // -1 to mean "unknown"); the resolver may return -1 and the response is still sent.
             var options = new SoulseekClientOptions(
                 enqueueDownload: (u, f, i) => Task.CompletedTask,
                 placeInQueueResolver: (u, f, i) => Task.FromResult<int?>(-1));
@@ -1141,8 +1220,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
-            mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Failed to send place in queue response")), It.IsAny<ArgumentOutOfRangeException>()), Times.Once);
-            mocks.PeerConnection.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.PeerConnection.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(msg => msg.ToByteArray().Matches(new PlaceInQueueResponse(filename, -1).ToByteArray())), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -1333,6 +1411,26 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 mocks.Diagnostic.Object);
 
             return (handler, mocks);
+        }
+
+        private static byte[] ReadStream(System.IO.Stream stream, long length)
+        {
+            var buffer = new byte[(int)length];
+            var offset = 0;
+
+            while (offset < buffer.Length)
+            {
+                var read = stream.Read(buffer, offset, buffer.Length - offset);
+
+                if (read == 0)
+                {
+                    break;
+                }
+
+                offset += read;
+            }
+
+            return buffer;
         }
 
         private class Mocks
