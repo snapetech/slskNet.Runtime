@@ -1,0 +1,30 @@
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH'
+    - if: '$CI_COMMIT_TAG'
+
+stages:
+  - test
+  - package
+
+dotnet:test:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:9.0
+  script:
+    - dotnet restore slskNet.Runtime.sln
+    - dotnet build slskNet.Runtime.sln --configuration Release --no-restore
+    - dotnet test slskNet.Runtime.sln --configuration Release --no-build --filter "FullyQualifiedName!~Integration"
+
+dotnet:pack:
+  stage: package
+  image: mcr.microsoft.com/dotnet/sdk:9.0
+  needs: ["dotnet:test"]
+  script:
+    - dotnet pack src/Soulseek.csproj --configuration Release --output artifacts/nuget
+  artifacts:
+    when: always
+    paths:
+      - artifacts/nuget/*.nupkg
+      - artifacts/nuget/*.snupkg
+    expire_in: 14 days
