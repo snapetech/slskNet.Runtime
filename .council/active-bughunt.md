@@ -1024,7 +1024,7 @@ examples/Web/web/src/lib/util.js:34:    return path;
 examples/Web/web/src/lib/util.js:37:/* https://www.npmjs.com/package/js-file-download
 examples/Web/web/src/lib/util.js:47:export const downloadFile = (data, filename, mime) => {
 examples/Web/web/src/lib/util.js:54:        window.navigator.msSaveBlob(blob, filename);
-examples/Web/web/src/lib/util.js:61:        tempLink.setAttribute('download', filename); 
+examples/Web/web/src/lib/util.js:61:        tempLink.setAttribute('download', filename);
 examples/Console/Utility.cs:99:        public static string ToLocalOSPath(this string path)
 examples/Console/Utility.cs:101:            return path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
 examples/Web/api/Program.cs:29:                .UseUrls("http://localhost:5000")
@@ -1080,7 +1080,7 @@ examples/Console/build/build.sh:10:warp-packer --arch linux-x64 --input_dir bin/
 examples/Console/build/build.sh:14:warp-packer --arch macos-x64 --input_dir bin/Release/netcoreapp2.1/osx-x64/publish --exec slsk-ex --output "$dir"/slsk-ex.osx-x64
 examples/Web/api/Trackers/SearchTracker.cs:25:            Searches.AddOrUpdate(id, search, (token, search) => search);
 examples/Web/web/src/components/Transfers/TransferList.js:72:                                <Table.HeaderCell className='transferlist-filename'>File</Table.HeaderCell>
-examples/Web/web/src/components/Transfers/TransferList.js:78:                            {files.sort((a, b) => getFileName(a.filename).localeCompare(getFileName(b.filename))).map((f, i) => 
+examples/Web/web/src/components/Transfers/TransferList.js:78:                            {files.sort((a, b) => getFileName(a.filename).localeCompare(getFileName(b.filename))).map((f, i) =>
 examples/Web/web/src/components/Transfers/TransferList.js:87:                                    <Table.Cell className='transferlist-filename'>{getFileName(f.filename)}</Table.Cell>
 examples/Web/web/src/lib/api.js:2:import { baseUrl, tokenKey, tokenPassthroughValue } from '../config';
 examples/Web/web/src/lib/api.js:5:  return JSON.parse(sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey));
@@ -1151,7 +1151,7 @@ examples/Web/web/src/components/App.js:69:                this.setToken(remember
 examples/Web/web/src/components/App.js:78:        localStorage.removeItem(tokenKey);
 examples/Web/web/src/components/App.js:79:        sessionStorage.removeItem(tokenKey);
 examples/Web/web/src/components/App.js:89:        const { token, login } = this.state;
-examples/Web/web/src/components/App.js:93:                {!token ? 
+examples/Web/web/src/components/App.js:93:                {!token ?
 examples/Web/web/src/components/App.js:140:                            {token !== tokenPassthroughValue && <Modal
 examples/Web/web/src/components/App.js:155:                                <Route path='*/chat' render={(props) => this.withTokenCheck(<Chat {...props}/>)}/>
 examples/Web/web/src/components/App.js:156:                                <Route path='*/rooms' render={(props) => this.withTokenCheck(<Rooms {...props}/>)}/>
@@ -1169,7 +1169,7 @@ examples/Web/web/src/components/LoginForm.js:51:                                
 examples/Web/web/src/components/LoginForm.js:66:                                onClick={() => onLoginAttempt(username, password, rememberMe)}
 examples/Web/api/DTO/SearchRequest.cs:58:        ///     Gets or sets the search token.
 examples/Web/web/src/components/Shared/FileList.js:45:              <Table.HeaderCell className='filelist-filename'>File</Table.HeaderCell>
-examples/Web/web/src/components/Shared/FileList.js:52:            {files.sort((a, b) => a.filename > b.filename ? 1 : -1).map((f, i) => 
+examples/Web/web/src/components/Shared/FileList.js:52:            {files.sort((a, b) => a.filename > b.filename ? 1 : -1).map((f, i) =>
 examples/Web/web/src/components/Shared/FileList.js:62:                <Table.Cell className='filelist-filename'>{locked ? <Icon name='lock'/> : ''}{getFileName(f.filename)}</Table.Cell>
 docs/fork-runtime-changes.md:15:- Keep regular direct and indirect peer/distributed/transfer connection attempts available as fallback paths.
 docs/fork-runtime-changes.md:20:Type-1 obfuscation support covers peer-message (`P`), distributed-message (`D`), and file-transfer (`F`) streams. It is not encryption and keeps regular fallback paths available.
@@ -1214,7 +1214,7 @@ tests/Soulseek.Tests.Unit/RoomListTests.cs:15://     along with this program.  I
 src/ItemSimilarUsers.cs:14://     along with this program.  If not, see https://www.gnu.org/licenses/.
 src/UserInterests.cs:14://     along with this program.  If not, see https://www.gnu.org/licenses/.
 examples/Web/api/Controllers/TransfersController.cs:115:        [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "The cancellation token source is owned by the tracker after the first state/progress callback; untracked setup failures are disposed before returning.")]
-examples/Web/api/Controllers/TransfersController.cs:229:        ///     Gets the downlaod for the specified username matching the specified filename, and requests 
+examples/Web/api/Controllers/TransfersController.cs:229:        ///     Gets the downlaod for the specified username matching the specified filename, and requests
 examples/Web/api/Controllers/TransfersController.cs:302:        ///     Gets the upload for the specified username matching the specified filename.
 examples/Web/api/Controllers/TransfersController.cs:337:        [SuppressMessage("Security", "CA3003:Review code for file path injection vulnerabilities", Justification = "The remote file name is normalized to a relative path and confined to the configured output directory by Extensions.GetSafeOutputPath.")]
 examples/Web/api/Controllers/TransfersController.cs:341:            var path = Path.GetDirectoryName(localFilename);
