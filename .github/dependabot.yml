@@ -19,5 +19,12 @@ updates:
     directory: "/examples/Web/web"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-router-dom"
+        update-types: ["version-update:semver-major"]
     labels:
       - "dependencies"
